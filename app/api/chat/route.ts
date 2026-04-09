@@ -37,9 +37,10 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ reply });
   } catch (err) {
-    console.error('Gateway error:', err);
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error('Gateway error:', msg);
     return NextResponse.json({
-      reply: `I'm Albert — gateway is warming up, try again in a moment.`
+      reply: `Error: ${msg}`
     });
   }
 }
