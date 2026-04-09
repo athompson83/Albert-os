@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+export const maxDuration = 60; // seconds — Vercel Pro allows up to 300s, hobby allows 60s
+
 const GATEWAY_URL = process.env.ALBERT_GATEWAY_URL || 'https://legwork-brisket-anyplace.ngrok-free.dev';
 
 export async function POST(req: NextRequest) {
@@ -17,7 +19,7 @@ export async function POST(req: NextRequest) {
         sessionId: 'albert-os-web',
         deliver: false,
       }),
-      signal: AbortSignal.timeout(30000),
+      signal: AbortSignal.timeout(55000),
     });
 
     if (!res.ok) {

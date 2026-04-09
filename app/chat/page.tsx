@@ -50,8 +50,8 @@ export default function ChatPage() {
         ))}
         {loading && (
           <div style={{ display: 'flex' }}>
-            <div style={{ padding: '10px 14px', borderRadius: '12px 12px 12px 2px', background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text-muted)', fontSize: 14 }}>
-              Albert is thinking...
+            <div style={{ padding: '10px 16px', borderRadius: '12px 12px 12px 2px', background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text-muted)', fontSize: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ letterSpacing: 2 }}>●●●</span> Albert is thinking...
             </div>
           </div>
         )}
