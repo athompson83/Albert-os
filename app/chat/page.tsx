@@ -57,16 +57,16 @@ export default function ChatPage() {
         )}
         <div ref={endRef} />
       </div>
-      <div style={{ padding: '16px 24px', borderTop: '1px solid var(--border)', background: 'var(--surface)', display: 'flex', gap: 10 }}>
+      <div style={{ padding: '12px 16px', borderTop: '1px solid var(--border)', background: 'var(--surface)', display: 'flex', gap: 8 }}>
         <input
           value={input}
           onChange={e => setInput(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && !e.shiftKey && send()}
           placeholder="Message Albert..."
-          style={{ flex: 1, background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 8, padding: '10px 14px', color: 'var(--text)', fontSize: 14, outline: 'none' }}
+          style={{ flex: 1, background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 24, padding: '12px 18px', color: 'var(--text)', fontSize: 16, outline: 'none' }}
         />
-        <button onClick={send} disabled={loading || !input.trim()} style={{ background: 'var(--primary)', border: 'none', borderRadius: 8, padding: '10px 16px', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontSize: 14, opacity: (!input.trim() || loading) ? 0.5 : 1 }}>
-          <Send size={16} /> Send
+        <button onClick={send} disabled={loading || !input.trim()} style={{ background: 'var(--primary)', border: 'none', borderRadius: '50%', width: 48, height: 48, minWidth: 48, color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: (!input.trim() || loading) ? 0.5 : 1 }}>
+          <Send size={18} />
         </button>
       </div>
     </div>
