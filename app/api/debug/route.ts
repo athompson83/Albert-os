@@ -30,3 +30,4 @@ export async function GET(req: NextRequest) {
     env: Object.keys(process.env).filter(k => k.startsWith('ALBERT')),
   });
 }
+// deploy trigger Thu Apr  9 16:33:00 EDT 2026
