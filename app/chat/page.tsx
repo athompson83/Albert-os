@@ -1,10 +1,13 @@
 'use client';
 import { useState, useRef, useEffect, useCallback } from 'react';
 import TopBar from '@/components/TopBar';
-import { Send, RotateCcw } from 'lucide-react';
+import { Send, RotateCcw, Paperclip, X, History, ChevronDown } from 'lucide-react';
 
+const PROXY = process.env.NEXT_PUBLIC_PROXY_URL || 'https://legwork-brisket-anyplace.ngrok-free.dev';
 const ERROR_PHRASES = ["having a moment", "having trouble", "try again", "had a moment"];
+const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
 
+type Attachment = { name: string; url: string; type: string; size: number };
 type Message = {
   id: string;
   role: 'user' | 'assistant';
@@ -12,57 +15,113 @@ type Message = {
   time: string;
   isError?: boolean;
   retryText?: string;
+  attachments?: Attachment[];
+  project?: string;
+};
+type HistoryEntry = {
+  id: string;
+  timestamp: string;
+  user: string;
+  albert: string;
+  project: string;
+  attachments?: Attachment[];
 };
 
 const initial: Message[] = [
   { id: '1', role: 'assistant', content: "Hey Adam 🎩 I'm Albert — your personal AI. What do you need?", time: '2:30 PM' },
 ];
 
-const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
-
-async function callChat(text: string, attempt = 1): Promise<string> {
+async function callChat(text: string, attachments: Attachment[], attempt = 1): Promise<{ reply: string; project: string }> {
   const res = await fetch('/api/chat', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ message: text }),
+    body: JSON.stringify({ message: text, attachments }),
   });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const data = await res.json();
   const reply: string = data.reply || 'Got it.';
-  // Auto-retry up to 3 times if we get an error reply
   const isErr = ERROR_PHRASES.some(p => reply.toLowerCase().includes(p));
   if (isErr && attempt < 3) {
-    await sleep(2000 * attempt); // 2s, 4s backoff
-    return callChat(text, attempt + 1);
+    await sleep(2000 * attempt);
+    return callChat(text, attachments, attempt + 1);
   }
-  return reply;
+  return { reply, project: data.project || 'General' };
+}
+
+async function uploadFile(file: File): Promise<Attachment | null> {
+  const form = new FormData();
+  form.append('file', file);
+  try {
+    const res = await fetch(`${PROXY}/upload`, { method: 'POST', body: form, headers: { 'ngrok-skip-browser-warning': 'true' } });
+    const data = await res.json();
+    return data.files?.[0] || null;
+  } catch { return null; }
 }
 
 export default function ChatPage() {
   const [messages, setMessages] = useState<Message[]>(initial);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [attachments, setAttachments] = useState<Attachment[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  const [history, setHistory] = useState<HistoryEntry[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
 
-  const send = useCallback(async (overrideText?: string) => {
-    const text = (overrideText ?? input).trim();
-    if (!text || loading) return;
+  const loadHistory = useCallback(async () => {
+    setHistoryLoading(true);
+    try {
+      const res = await fetch(`${PROXY}/chats`, { headers: { 'ngrok-skip-browser-warning': 'true' } });
+      const data = await res.json();
+      setHistory((data.chats || []).reverse());
+    } catch { setHistory([]); }
+    setHistoryLoading(false);
+  }, []);
 
+  const toggleHistory = () => {
+    setShowHistory(s => {
+      if (!s) loadHistory();
+      return !s;
+    });
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+    setUploading(true);
+    const uploaded: Attachment[] = [];
+    for (const f of files) {
+      const att = await uploadFile(f);
+      if (att) uploaded.push(att);
+    }
+    setAttachments(a => [...a, ...uploaded]);
+    setUploading(false);
+    if (fileRef.current) fileRef.current.value = '';
+  };
+
+  const removeAttachment = (url: string) => setAttachments(a => a.filter(f => f.url !== url));
+
+  const send = useCallback(async (overrideText?: string, overrideAttachments?: Attachment[]) => {
+    const text = (overrideText ?? input).trim();
+    const atts = overrideAttachments ?? attachments;
+    if (!text || loading) return;
     const timeStr = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
 
     if (!overrideText) {
-      setMessages(m => [...m, { id: Date.now().toString(), role: 'user', content: text, time: timeStr }]);
+      setMessages(m => [...m, { id: Date.now().toString(), role: 'user', content: text, time: timeStr, attachments: atts }]);
       setInput('');
+      setAttachments([]);
     } else {
-      // Retry: remove old error bubble
       setMessages(m => m.filter(msg => !(msg.isError && msg.retryText === text)));
     }
 
     setLoading(true);
     try {
-      const reply = await callChat(text);
+      const { reply, project } = await callChat(text, atts);
       const isError = ERROR_PHRASES.some(p => reply.toLowerCase().includes(p));
       setMessages(m => [...m, {
         id: Date.now().toString() + 'r',
@@ -71,6 +130,7 @@ export default function ChatPage() {
         time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
         isError,
         retryText: isError ? text : undefined,
+        project,
       }]);
     } catch {
       setMessages(m => [...m, {
@@ -83,41 +143,72 @@ export default function ChatPage() {
       }]);
     }
     setLoading(false);
-  }, [input, loading]);
+  }, [input, loading, attachments]);
+
+  const isImage = (type: string) => type.startsWith('image/');
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
       <TopBar title="Chat with Albert" />
+
+      {/* History Panel */}
+      <div style={{ borderBottom: showHistory ? '1px solid var(--border)' : 'none', background: 'var(--surface)' }}>
+        <button onClick={toggleHistory} style={{ width: '100%', padding: '8px 20px', display: 'flex', alignItems: 'center', gap: 6, background: 'transparent', border: 'none', borderBottom: '1px solid var(--border)', color: 'var(--text-muted)', fontSize: 13, cursor: 'pointer' }}>
+          <History size={14} /> Chat History <ChevronDown size={14} style={{ marginLeft: 'auto', transform: showHistory ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
+        </button>
+        {showHistory && (
+          <div style={{ maxHeight: 220, overflowY: 'auto', padding: '8px 12px' }}>
+            {historyLoading && <div style={{ color: 'var(--text-muted)', fontSize: 13, padding: 8 }}>Loading...</div>}
+            {!historyLoading && history.length === 0 && <div style={{ color: 'var(--text-muted)', fontSize: 13, padding: 8 }}>No history yet today.</div>}
+            {history.map(h => (
+              <div key={h.id} onClick={() => { setShowHistory(false); setMessages(m => [...m, { id: h.id + 'u', role: 'user', content: h.user, time: new Date(h.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) }, { id: h.id + 'a', role: 'assistant', content: h.albert, time: new Date(h.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }), project: h.project }]); }}
+                style={{ padding: '8px 10px', borderRadius: 7, marginBottom: 4, cursor: 'pointer', background: 'var(--surface-2)', border: '1px solid var(--border)' }}>
+                <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 2 }}>{new Date(h.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })} · {h.project}</div>
+                <div style={{ fontSize: 13, color: '#e5e5e5', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{h.user}</div>
+                <div style={{ fontSize: 12, color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{h.albert}</div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Messages */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 14 }}>
         {messages.map(m => (
           <div key={m.id} style={{ display: 'flex', flexDirection: 'column', alignItems: m.role === 'user' ? 'flex-end' : 'flex-start' }}>
             {m.role === 'assistant' && (
-              <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 4 }}>🎩 Albert · {m.time}</div>
+              <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 4 }}>
+                🎩 Albert · {m.time}{m.project && m.project !== 'General' ? ` · ${m.project}` : ''}
+              </div>
             )}
-            <div style={{
-              maxWidth: '78%',
-              padding: '11px 15px',
-              borderRadius: m.role === 'user' ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
-              background: m.role === 'user' ? 'var(--primary)' : m.isError ? 'rgba(239,68,68,0.08)' : 'var(--surface)',
-              border: m.role === 'assistant' ? `1px solid ${m.isError ? 'rgba(239,68,68,0.35)' : 'var(--border)'}` : 'none',
-              color: m.isError ? '#fca5a5' : '#e5e5e5',
-              fontSize: 14,
-              lineHeight: 1.55,
-            }}>
+
+            {/* Attachments */}
+            {m.attachments && m.attachments.length > 0 && (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 6, justifyContent: m.role === 'user' ? 'flex-end' : 'flex-start' }}>
+                {m.attachments.map(att => (
+                  <div key={att.url}>
+                    {isImage(att.type) ? (
+                      <img src={`${PROXY}${att.url}`} alt={att.name} style={{ maxWidth: 200, maxHeight: 200, borderRadius: 10, objectFit: 'cover' }} />
+                    ) : (
+                      <a href={`${PROXY}${att.url}`} target="_blank" rel="noreferrer" style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 10px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, color: '#a5b4fc', fontSize: 12, textDecoration: 'none' }}>
+                        📎 {att.name}
+                      </a>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div style={{ maxWidth: '78%', padding: '11px 15px', borderRadius: m.role === 'user' ? '16px 16px 4px 16px' : '16px 16px 16px 4px', background: m.role === 'user' ? 'var(--primary)' : m.isError ? 'rgba(239,68,68,0.08)' : 'var(--surface)', border: m.role === 'assistant' ? `1px solid ${m.isError ? 'rgba(239,68,68,0.35)' : 'var(--border)'}` : 'none', color: m.isError ? '#fca5a5' : '#e5e5e5', fontSize: 14, lineHeight: 1.55 }}>
               {m.content}
             </div>
+
             {m.isError && m.retryText && (
-              <button
-                onClick={() => send(m.retryText)}
-                disabled={loading}
-                style={{ marginTop: 6, display: 'flex', alignItems: 'center', gap: 5, background: 'transparent', border: '1px solid rgba(239,68,68,0.4)', borderRadius: 20, padding: '5px 12px', color: '#fca5a5', fontSize: 12, cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.5 : 1 }}
-              >
+              <button onClick={() => send(m.retryText, [])} disabled={loading} style={{ marginTop: 6, display: 'flex', alignItems: 'center', gap: 5, background: 'transparent', border: '1px solid rgba(239,68,68,0.4)', borderRadius: 20, padding: '5px 12px', color: '#fca5a5', fontSize: 12, cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.5 : 1 }}>
                 <RotateCcw size={12} /> Retry
               </button>
             )}
-            {m.role === 'user' && (
-              <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>{m.time}</div>
-            )}
+            {m.role === 'user' && <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>{m.time}</div>}
           </div>
         ))}
         {loading && (
@@ -130,15 +221,35 @@ export default function ChatPage() {
         )}
         <div ref={endRef} />
       </div>
-      <div style={{ padding: '12px 16px', borderTop: '1px solid var(--border)', background: 'var(--surface)', display: 'flex', gap: 8, alignItems: 'center' }}>
+
+      {/* Attachment previews */}
+      {attachments.length > 0 && (
+        <div style={{ padding: '8px 16px', borderTop: '1px solid var(--border)', background: 'var(--surface)', display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+          {attachments.map(att => (
+            <div key={att.url} style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 8px', background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 20, fontSize: 12, color: 'var(--text-muted)' }}>
+              {isImage(att.type) ? '🖼️' : '📎'} {att.name.slice(0, 20)}{att.name.length > 20 ? '…' : ''}
+              <button onClick={() => removeAttachment(att.url)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 0, display: 'flex' }}>
+                <X size={12} />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Input bar */}
+      <div style={{ padding: '10px 16px', borderTop: '1px solid var(--border)', background: 'var(--surface)', display: 'flex', gap: 8, alignItems: 'center' }}>
+        <input type="file" ref={fileRef} onChange={handleFileChange} multiple accept="image/*,.pdf,.doc,.docx,.txt,.csv,.mp4,.mov" style={{ display: 'none' }} />
+        <button onClick={() => fileRef.current?.click()} disabled={uploading} style={{ background: 'transparent', border: '1px solid var(--border)', borderRadius: '50%', width: 40, height: 40, minWidth: 40, color: uploading ? 'var(--primary)' : 'var(--text-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <Paperclip size={16} />
+        </button>
         <input
           value={input}
           onChange={e => setInput(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && !e.shiftKey && send()}
           placeholder="Message Albert..."
-          style={{ flex: 1, background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 24, padding: '12px 18px', color: 'var(--text)', fontSize: 16, outline: 'none' }}
+          style={{ flex: 1, background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 24, padding: '11px 18px', color: 'var(--text)', fontSize: 16, outline: 'none' }}
         />
-        <button onClick={() => send()} disabled={loading || !input.trim()} style={{ background: 'var(--primary)', border: 'none', borderRadius: '50%', width: 48, height: 48, minWidth: 48, color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: (!input.trim() || loading) ? 0.5 : 1 }}>
+        <button onClick={() => send()} disabled={loading || (!input.trim() && attachments.length === 0)} style={{ background: 'var(--primary)', border: 'none', borderRadius: '50%', width: 44, height: 44, minWidth: 44, color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: ((!input.trim() && attachments.length === 0) || loading) ? 0.5 : 1 }}>
           <Send size={18} />
         </button>
       </div>
