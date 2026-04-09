@@ -39,8 +39,6 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error('Gateway error:', msg);
-    return NextResponse.json({
-      reply: `Error: ${msg}`
-    });
+    return NextResponse.json({ reply: "I'm having a moment — try again in a sec. 🎩" });
   }
 }
