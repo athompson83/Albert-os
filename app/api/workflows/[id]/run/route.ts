@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const GW = process.env.ALBERT_GATEWAY_URL || 'https://legwork-brisket-anyplace.ngrok-free.dev';
+const GW = (process.env.ALBERT_GATEWAY_URL || 'https://legwork-brisket-anyplace.ngrok-free.dev').replace(/\/+$/, '');
 const H = { 'ngrok-skip-browser-warning': 'true', 'Content-Type': 'application/json' };
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {

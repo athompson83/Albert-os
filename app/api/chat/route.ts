@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export const maxDuration = 60; // seconds — Vercel Pro allows up to 300s, hobby allows 60s
 
-const GATEWAY_URL = process.env.ALBERT_GATEWAY_URL || 'https://legwork-brisket-anyplace.ngrok-free.dev';
+const GATEWAY_URL = (process.env.ALBERT_GATEWAY_URL || 'https://legwork-brisket-anyplace.ngrok-free.dev').replace(/\/+$/, '');
 
 export async function POST(req: NextRequest) {
   const { message, attachments = [], agentId = 'albert' } = await req.json();
