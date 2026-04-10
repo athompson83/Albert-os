@@ -90,8 +90,24 @@ async function uploadFile(file: File): Promise<Attachment | null> {
   }
 }
 
+const STORAGE_KEY = 'albert-chat-messages';
+const MAX_STORED = 100;
+
+function loadStoredMessages(): Message[] {
+  if (typeof window === 'undefined') return initial;
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      const parsed = JSON.parse(stored) as Message[];
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch {}
+  return initial;
+}
+
 export default function ChatPage() {
   const [messages, setMessages] = useState<Message[]>(initial);
+  const [hydrated, setHydrated] = useState(false);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
@@ -106,6 +122,22 @@ export default function ChatPage() {
   const endRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Hydrate from localStorage on mount
+  useEffect(() => {
+    const stored = loadStoredMessages();
+    setMessages(stored);
+    setHydrated(true);
+  }, []);
+
+  // Persist messages to localStorage whenever they change
+  useEffect(() => {
+    if (!hydrated) return;
+    try {
+      const toStore = messages.slice(-MAX_STORED);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(toStore));
+    } catch {}
+  }, [messages, hydrated]);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth' });
