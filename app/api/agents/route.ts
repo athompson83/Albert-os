@@ -8,11 +8,18 @@ export async function GET() {
     const res = await fetch(`${GATEWAY_URL}/agents`, {
       headers: NGROK_HEADER,
       cache: 'no-store',
+      signal: AbortSignal.timeout(8000),
     });
+    if (!res.ok) {
+      const txt = await res.text().catch(() => '');
+      console.error(`Agents proxy error ${res.status}:`, txt.slice(0, 200));
+      return NextResponse.json({ error: `Upstream ${res.status}`, agents: [] }, { status: 200 });
+    }
     const data = await res.json();
-    return NextResponse.json(data, { status: res.status });
+    return NextResponse.json(data, { status: 200 });
   } catch (err) {
-    return NextResponse.json({ error: String(err), agents: [] }, { status: 500 });
+    console.error('Agents fetch error:', String(err));
+    return NextResponse.json({ error: String(err), agents: [] }, { status: 200 });
   }
 }
 
