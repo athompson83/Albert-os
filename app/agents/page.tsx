@@ -83,10 +83,21 @@ export default function AgentsPage() {
     setError('');
     try {
       const res = await fetch('/api/agents', { cache: 'no-store' });
+      if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
       const data = await res.json();
-      setAgents(Array.isArray(data?.agents) ? data.agents : []);
+      console.log('Agents response:', data);
+      if (Array.isArray(data?.agents) && data.agents.length > 0) {
+        setAgents(data.agents);
+      } else if (data?.error) {
+        throw new Error(data.error);
+      } else {
+        // Fallback: proxy might be offline, show helpful message
+        setError('Could not load agents — proxy may be offline. Make sure the Albert proxy is running.');
+        setAgents([]);
+      }
     } catch (e) {
-      setError(String(e));
+      console.error('loadAgents error:', e);
+      setError(`Failed to load agents: ${String(e)}`);
       setAgents([]);
     }
     setLoading(false);
@@ -231,13 +242,17 @@ export default function AgentsPage() {
         </div>
 
         {error && (
-          <div style={{ marginBottom: 12, color: '#fca5a5', fontSize: 13, border: '1px solid #7f1d1d', padding: 10, borderRadius: 10 }}>
-            {error}
+          <div style={{ marginBottom: 16, color: '#fca5a5', fontSize: 13, border: '1px solid #7f1d1d', padding: 14, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+            <span>⚠️ {error}</span>
+            <button onClick={loadAgents} style={{ background: '#7f1d1d', border: 'none', borderRadius: 6, padding: '6px 12px', color: '#fca5a5', cursor: 'pointer', fontSize: 12, flexShrink: 0 }}>Retry</button>
           </div>
         )}
 
         {loading ? (
-          <div style={{ color: 'var(--text-muted)' }}>Loading agents...</div>
+          <div style={{ color: 'var(--text-muted)', padding: 20, textAlign: 'center' }}>
+            <div style={{ fontSize: 20, marginBottom: 8 }}>⏳</div>
+            Loading agents...
+          </div>
         ) : (
           <div
             style={{

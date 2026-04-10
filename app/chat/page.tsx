@@ -208,9 +208,8 @@ export default function ChatPage() {
       const text = (overrideText ?? input).trim();
       const atts = overrideAttachments ?? attachments;
       if (!text || loading) return;
-      if (!activeAgent) return;
       const timeStr = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-      const selectedAgent = agents.find((a) => a.id === activeAgentId) || activeAgent;
+      const selectedAgent = agents.find((a) => a.id === activeAgentId) || activeAgent || { id: 'albert', name: 'Albert', emoji: '🎩', sessionId: 'albert-os-web', role: '', description: '', color: '#6366f1' };
 
       if (!overrideText) {
         setMessages((m) => [...m, { id: Date.now().toString(), role: 'user', content: text, time: timeStr, attachments: atts }]);
