@@ -3,7 +3,6 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import TopBar from '@/components/TopBar';
 import AgentPanel, { type Agent } from '@/components/AgentPanel';
-import AgentSwitcher from '@/components/AgentSwitcher';
 import { Send, RotateCcw, Paperclip, X, History, ChevronDown } from 'lucide-react';
 
 const PROXY = process.env.NEXT_PUBLIC_PROXY_URL || 'https://legwork-brisket-anyplace.ngrok-free.dev';
@@ -355,7 +354,6 @@ export default function ChatPage() {
 
       <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', flex: 1, minWidth: 0 }}>
         <TopBar title="Chat with Albert" />
-        <AgentSwitcher agents={agents} activeAgentId={activeAgentId} onSelect={switchAgent} />
 
         {/* History Panel */}
         <div style={{ borderBottom: showHistory ? '1px solid var(--border)' : 'none', background: 'var(--surface)' }}>
