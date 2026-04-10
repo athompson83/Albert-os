@@ -3,17 +3,9 @@ import { NextRequest, NextResponse } from 'next/server';
 export const maxDuration = 60; // seconds — Vercel Pro allows up to 300s, hobby allows 60s
 
 const GATEWAY_URL = process.env.ALBERT_GATEWAY_URL || 'https://legwork-brisket-anyplace.ngrok-free.dev';
-const AGENT_SESSION_MAP: Record<string, string> = {
-  albert: 'albert-os-web',
-  assemble: 'agent-assemble',
-  sentinelqa: 'agent-sentinelqa',
-  apex360: 'agent-apex360',
-  'ai-business': 'agent-ai-business',
-};
 
 export async function POST(req: NextRequest) {
-  const { message, agentId } = await req.json();
-  const sessionId = AGENT_SESSION_MAP[agentId] || AGENT_SESSION_MAP.albert;
+  const { message, attachments = [], agentId = 'albert' } = await req.json();
   try {
     // Call OpenClaw gateway agent endpoint via ngrok tunnel
     const res = await fetch(`${GATEWAY_URL}/agent`, {
@@ -24,7 +16,8 @@ export async function POST(req: NextRequest) {
       },
       body: JSON.stringify({
         message,
-        sessionId,
+        attachments,
+        agentId,
         deliver: false,
       }),
       signal: AbortSignal.timeout(55000),

@@ -4,13 +4,14 @@ import { usePathname } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import {
   LayoutDashboard, MessageSquare, FolderKanban,
-  CheckSquare, Plug, FileText, Terminal, ScrollText,
+  Users, CheckSquare, Plug, FileText, Terminal, ScrollText,
   Menu, X
 } from 'lucide-react';
 
 const nav = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/chat', label: 'Chat', icon: MessageSquare },
+  { href: '/agents', label: 'Agents', icon: Users },
   { href: '/projects', label: 'Projects', icon: FolderKanban },
   { href: '/tasks', label: 'Tasks', icon: CheckSquare },
   { href: '/apps', label: 'Apps', icon: Plug },

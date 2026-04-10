@@ -10,55 +10,6 @@ const PROXY = process.env.NEXT_PUBLIC_PROXY_URL || 'https://legwork-brisket-anyp
 const ERROR_PHRASES = ['having a moment', 'having trouble', 'try again', 'had a moment'];
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-const DEFAULT_AGENTS: Agent[] = [
-  {
-    id: 'albert',
-    name: 'Albert',
-    emoji: '🎩',
-    role: 'Orchestrator',
-    description: 'Main agent. Routes to specialists.',
-    color: '#6366f1',
-    isDefault: true,
-    sessionId: 'albert-os-web',
-  },
-  {
-    id: 'assemble',
-    name: 'Assemble',
-    emoji: '📋',
-    role: 'Event & Training Platform',
-    description: 'Assemble SaaS — courses, certs, revenue.',
-    color: '#10b981',
-    sessionId: 'agent-assemble',
-  },
-  {
-    id: 'sentinelqa',
-    name: 'SentinelQA',
-    emoji: '🛡️',
-    role: 'Clinical Quality Platform',
-    description: 'CQS/CQI scoring, QA workflows, EMS outcomes.',
-    color: '#ef4444',
-    sessionId: 'agent-sentinelqa',
-  },
-  {
-    id: 'apex360',
-    name: 'APEx360',
-    emoji: '📊',
-    role: 'Evaluation & Scheduling',
-    description: 'Evals, FTO tracking, Aladtec integration.',
-    color: '#f59e0b',
-    sessionId: 'agent-apex360',
-  },
-  {
-    id: 'ai-business',
-    name: 'Operator',
-    emoji: '🚀',
-    role: 'AI Business & Automation',
-    description: 'Content automation, affiliate, revenue ops.',
-    color: '#8b5cf6',
-    sessionId: 'agent-ai-business',
-  },
-];
-
 type Attachment = { name: string; url: string; type: string; size: number };
 type Message = {
   id: string;
@@ -148,7 +99,7 @@ export default function ChatPage() {
   const [showHistory, setShowHistory] = useState(false);
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
-  const [agents, setAgents] = useState<Agent[]>(DEFAULT_AGENTS);
+  const [agents, setAgents] = useState<Agent[]>([]);
   const [activeAgentId, setActiveAgentId] = useState('albert');
   const [mention, setMention] = useState<MentionState>({ open: false, query: '', start: -1, end: -1 });
 
@@ -168,12 +119,15 @@ export default function ChatPage() {
         const res = await fetch('/api/agents');
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
-        if (!cancelled && Array.isArray(data?.agents) && data.agents.length) {
+        if (!cancelled && Array.isArray(data?.agents)) {
           setAgents(data.agents);
+          if (data.agents.length > 0) {
+            setActiveAgentId((prev) => (data.agents.some((agent: Agent) => agent.id === prev) ? prev : data.agents[0].id));
+          }
         }
       } catch {
         if (!cancelled) {
-          setAgents(DEFAULT_AGENTS);
+          setAgents([]);
         }
       }
     }
@@ -185,7 +139,7 @@ export default function ChatPage() {
   }, []);
 
   const activeAgent = useMemo(
-    () => agents.find((agent) => agent.id === activeAgentId) || agents[0] || DEFAULT_AGENTS[0],
+    () => agents.find((agent) => agent.id === activeAgentId) || agents[0] || null,
     [agents, activeAgentId],
   );
 
@@ -254,6 +208,7 @@ export default function ChatPage() {
       const text = (overrideText ?? input).trim();
       const atts = overrideAttachments ?? attachments;
       if (!text || loading) return;
+      if (!activeAgent) return;
       const timeStr = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
       const selectedAgent = agents.find((a) => a.id === activeAgentId) || activeAgent;
 
