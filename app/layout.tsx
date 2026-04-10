@@ -3,6 +3,8 @@ import './globals.css';
 import Sidebar from '@/components/Sidebar';
 import MainWrapper from '@/components/MainWrapper';
 import PWAInit from '@/components/PWAInit';
+import AuthProvider from '@/components/AuthProvider';
+import AppShell from '@/components/AppShell';
 
 export const metadata: Metadata = {
   title: 'Albert OS',
@@ -31,9 +33,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body style={{ margin: 0, background: '#0f0f0f' }}>
-        <PWAInit />
-        <Sidebar />
-        <MainWrapper>{children}</MainWrapper>
+        <AuthProvider>
+          <PWAInit />
+          <AppShell>{children}</AppShell>
+        </AuthProvider>
       </body>
     </html>
   );
