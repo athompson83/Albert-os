@@ -808,6 +808,7 @@ export default function ChatPage() {
           style={{
             position: 'relative',
             padding: '10px 16px',
+            paddingBottom: 'calc(10px + env(safe-area-inset-bottom, 0px))',
             borderTop: '1px solid var(--border)',
             background: 'var(--surface)',
             display: 'flex',

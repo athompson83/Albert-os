@@ -45,7 +45,7 @@ export default function Sidebar() {
       {isMobile && (
         <button
           onClick={() => setOpen(o => !o)}
-          style={{ position: 'fixed', top: 12, left: 12, zIndex: 200, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: 8, cursor: 'pointer', color: 'var(--text)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          style={{ position: 'fixed', top: 'calc(12px + env(safe-area-inset-top, 0px))', left: 12, zIndex: 200, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: 8, cursor: 'pointer', color: 'var(--text)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
         >
           {open ? <X size={20} /> : <Menu size={20} />}
         </button>
@@ -58,7 +58,7 @@ export default function Sidebar() {
 
       {/* Sidebar */}
       {sidebarVisible && (
-        <aside style={{ width: 220, background: 'var(--surface)', borderRight: '1px solid var(--border)', display: 'flex', flexDirection: 'column', height: '100vh', position: 'fixed', left: 0, top: 0, zIndex: 100, transition: 'transform 0.2s' }}>
+        <aside style={{ width: 220, background: 'var(--surface)', borderRight: '1px solid var(--border)', display: 'flex', flexDirection: 'column', height: '100vh', position: 'fixed', left: 0, top: 0, zIndex: 100, transition: 'transform 0.2s', paddingTop: 'env(safe-area-inset-top, 0px)' }}>
           {/* Logo */}
           <div style={{ padding: '20px 16px', borderBottom: '1px solid var(--border)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -89,7 +89,7 @@ export default function Sidebar() {
           </nav>
 
           {/* Footer */}
-          <div style={{ padding: '12px 16px', borderTop: '1px solid var(--border)' }}>
+          <div style={{ padding: '12px 16px', paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 0px))', borderTop: '1px solid var(--border)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <div style={{ width: 32, height: 32, background: '#374151', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 600, color: '#fff' }}>A</div>
               <div>
