@@ -89,13 +89,16 @@ async function uploadFile(file: File): Promise<Attachment | null> {
   }
 }
 
-const STORAGE_KEY = 'albert-chat-messages';
 const MAX_STORED = 100;
 
-function loadStoredMessages(): Message[] {
+function getStorageKey(agentId: string) {
+  return `albert-chat-messages-${agentId}`;
+}
+
+function loadStoredMessages(agentId: string): Message[] {
   if (typeof window === 'undefined') return initial;
   try {
-    const stored = localStorage.getItem(STORAGE_KEY);
+    const stored = localStorage.getItem(getStorageKey(agentId));
     if (stored) {
       const parsed = JSON.parse(stored) as Message[];
       if (Array.isArray(parsed) && parsed.length > 0) return parsed;
@@ -107,6 +110,7 @@ function loadStoredMessages(): Message[] {
 export default function ChatPage() {
   const [messages, setMessages] = useState<Message[]>(initial);
   const [hydrated, setHydrated] = useState(false);
+  const prevAgentIdRef = useRef<string>('albert');
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
@@ -124,9 +128,11 @@ export default function ChatPage() {
 
   // Hydrate from localStorage on mount
   useEffect(() => {
-    const stored = loadStoredMessages();
+    const stored = loadStoredMessages(activeAgentId);
     setMessages(stored);
+    prevAgentIdRef.current = activeAgentId;
     setHydrated(true);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Persist messages to localStorage whenever they change
@@ -134,9 +140,18 @@ export default function ChatPage() {
     if (!hydrated) return;
     try {
       const toStore = messages.slice(-MAX_STORED);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(toStore));
+      localStorage.setItem(getStorageKey(activeAgentId), JSON.stringify(toStore));
     } catch {}
-  }, [messages, hydrated]);
+  }, [messages, hydrated, activeAgentId]);
+
+  // When agent changes, save current and load new agent's history
+  useEffect(() => {
+    if (!hydrated) return;
+    if (prevAgentIdRef.current === activeAgentId) return;
+    prevAgentIdRef.current = activeAgentId;
+    const stored = loadStoredMessages(activeAgentId);
+    setMessages(stored);
+  }, [activeAgentId, hydrated]);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -174,29 +189,15 @@ export default function ChatPage() {
     [agents, activeAgentId],
   );
 
-  const appendSwitchMessage = useCallback((agent: Agent) => {
-    setMessages((m) => [
-      ...m,
-      {
-        id: `${Date.now()}s`,
-        role: 'system',
-        content: `— switched to ${agent.emoji} ${agent.name} —`,
-        time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
-        agentId: agent.id,
-      },
-    ]);
-  }, []);
-
   const switchAgent = useCallback(
     (agentId: string) => {
       if (agentId === activeAgentId) return;
       const next = agents.find((a) => a.id === agentId);
       if (!next) return;
       setActiveAgentId(next.id);
-      appendSwitchMessage(next);
       setMention({ open: false, query: '', start: -1, end: -1 });
     },
-    [activeAgentId, agents, appendSwitchMessage],
+    [activeAgentId, agents],
   );
 
   const loadHistory = useCallback(async () => {
@@ -354,6 +355,45 @@ export default function ChatPage() {
 
       <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', flex: 1, minWidth: 0 }}>
         <TopBar title="Chat with Albert" />
+
+        {/* Agent Selector */}
+        {agents.length > 0 && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            padding: '8px 16px',
+            borderBottom: '1px solid var(--border)',
+            background: 'var(--surface)',
+            overflowX: 'auto',
+            flexShrink: 0,
+          }}>
+            {agents.map((agent) => (
+              <button
+                key={agent.id}
+                onClick={() => switchAgent(agent.id)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  padding: '5px 12px',
+                  borderRadius: 20,
+                  border: activeAgentId === agent.id ? '1.5px solid var(--primary)' : '1px solid var(--border)',
+                  background: activeAgentId === agent.id ? 'rgba(99,102,241,0.15)' : 'transparent',
+                  color: activeAgentId === agent.id ? 'var(--primary)' : 'var(--text-muted)',
+                  fontSize: 13,
+                  fontWeight: activeAgentId === agent.id ? 600 : 400,
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                  transition: 'all 0.15s',
+                }}
+              >
+                <span>{agent.emoji}</span>
+                <span>{agent.name}</span>
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* History Panel */}
         <div style={{ borderBottom: showHistory ? '1px solid var(--border)' : 'none', background: 'var(--surface)' }}>
