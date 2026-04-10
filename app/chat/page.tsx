@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import TopBar from '@/components/TopBar';
 import AgentPanel, { type Agent } from '@/components/AgentPanel';
-import { Send, RotateCcw, Paperclip, X, History, ChevronDown } from 'lucide-react';
+import { Send, RotateCcw, Paperclip, X, History, ChevronDown, Mic, MicOff, Volume2, VolumeX } from 'lucide-react';
 
 const PROXY = process.env.NEXT_PUBLIC_PROXY_URL || 'https://legwork-brisket-anyplace.ngrok-free.dev';
 const ERROR_PHRASES = ['having a moment', 'having trouble', 'try again', 'had a moment'];
@@ -122,9 +122,79 @@ export default function ChatPage() {
   const [activeAgentId, setActiveAgentId] = useState('albert');
   const [mention, setMention] = useState<MentionState>({ open: false, query: '', start: -1, end: -1 });
 
+  const [isListening, setIsListening] = useState(false);
+  const [speakingId, setSpeakingId] = useState<string | null>(null);
+  const [speechSupported, setSpeechSupported] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const recognitionRef = useRef<any>(null);
+
   const endRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Check speech support on mount
+  useEffect(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const w = window as any;
+    setSpeechSupported(!!(w.SpeechRecognition || w.webkitSpeechRecognition));
+  }, []);
+
+  const toggleListening = useCallback(() => {
+    if (isListening) {
+      recognitionRef.current?.stop();
+      setIsListening(false);
+      return;
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const w = window as any;
+    const SR = w.SpeechRecognition || w.webkitSpeechRecognition;
+    if (!SR) return;
+    const recognition = new SR();
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.lang = 'en-US';
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    recognition.onresult = (e: any) => {
+      const transcript = e.results[0][0].transcript;
+      setInput((prev) => (prev ? prev + ' ' + transcript : transcript));
+    };
+    recognition.onend = () => setIsListening(false);
+    recognition.onerror = () => setIsListening(false);
+    recognitionRef.current = recognition;
+    recognition.start();
+    setIsListening(true);
+  }, [isListening]);
+
+  const speakMessage = useCallback(async (messageId: string, text: string, agentId: string) => {
+    // Stop current audio if any
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+    }
+    if (speakingId === messageId) {
+      setSpeakingId(null);
+      return;
+    }
+    setSpeakingId(messageId);
+    try {
+      const res = await fetch('/api/tts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text, agentId }),
+      });
+      if (!res.ok) throw new Error('TTS failed');
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const audio = new Audio(url);
+      audioRef.current = audio;
+      audio.onended = () => { setSpeakingId(null); URL.revokeObjectURL(url); };
+      audio.onerror = () => { setSpeakingId(null); URL.revokeObjectURL(url); };
+      audio.play();
+    } catch {
+      setSpeakingId(null);
+    }
+  }, [speakingId]);
 
   // Hydrate from localStorage on mount
   useEffect(() => {
@@ -292,6 +362,50 @@ export default function ChatPage() {
   );
 
   const isImage = (type: string) => type.startsWith('image/');
+
+  // ── Rich media renderer ───────────────────────────────────────────────────
+  const PROXY_BASE = process.env.NEXT_PUBLIC_PROXY_URL || 'https://legwork-brisket-anyplace.ngrok-free.dev';
+  const renderMessageContent = useCallback((content: string) => {
+    const imgExt = /\.(png|jpg|jpeg|gif|webp|svg)$/i;
+    const vidExt = /\.(mp4|mov|webm)$/i;
+    const mdImg = /!\[([^\]]*)\]\(([^)]+)\)/g;
+    const mdLink = /\[([^\]]+)\]\(([^)]+)\)/g;
+    const urlRe = /https?:\/\/[^\s)"'<>]+/g;
+
+    // Replace markdown images first
+    const parts: React.ReactNode[] = [];
+    let last = 0;
+    let m: RegExpExecArray | null;
+    const combined = /(!?\[[^\]]*\]\([^)]+\))|https?:\/\/[^\s)"'<>]+/g;
+    void mdLink; void urlRe;
+    combined.lastIndex = 0;
+    while ((m = combined.exec(content)) !== null) {
+      if (m.index > last) parts.push(content.slice(last, m.index));
+      const token = m[0];
+      if (token.startsWith('![')) {
+        const inner = token.match(/!\[([^\]]*)\]\(([^)]+)\)/);
+        const src = inner ? inner[2] : '';
+        parts.push(<img key={m.index} src={src} alt={inner?.[1] || ''} style={{ maxWidth: '100%', maxHeight: 320, borderRadius: 10, display: 'block', marginTop: 6 }} />);
+      } else if (token.startsWith('[')) {
+        const inner = token.match(/\[([^\]]+)\]\(([^)]+)\)/);
+        const href = inner ? inner[2] : token;
+        const label = inner ? inner[1] : token;
+        parts.push(<a key={m.index} href={href} target="_blank" rel="noreferrer" style={{ color: '#a5b4fc', textDecoration: 'underline' }}>{label}</a>);
+      } else {
+        const url = token;
+        if (imgExt.test(url)) {
+          parts.push(<img key={m.index} src={url} alt="" style={{ maxWidth: '100%', maxHeight: 320, borderRadius: 10, display: 'block', marginTop: 6 }} />);
+        } else if (vidExt.test(url)) {
+          parts.push(<video key={m.index} src={url} controls style={{ maxWidth: '100%', maxHeight: 320, borderRadius: 10, display: 'block', marginTop: 6 }} />);
+        } else {
+          parts.push(<a key={m.index} href={url} target="_blank" rel="noreferrer" style={{ color: '#a5b4fc', textDecoration: 'underline', wordBreak: 'break-all' }}>{url}</a>);
+        }
+      }
+      last = m.index + token.length;
+    }
+    if (last < content.length) parts.push(content.slice(last));
+    return <>{parts}</>;
+  }, []);
 
   const updateMention = useCallback((value: string, caret: number | null) => {
     if (caret === null) {
@@ -557,19 +671,36 @@ export default function ChatPage() {
                     </div>
                   )}
 
-                  <div
-                    style={{
-                      maxWidth: '78%',
-                      padding: '11px 15px',
-                      borderRadius: m.role === 'user' ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
-                      background: m.role === 'user' ? 'var(--primary)' : m.isError ? 'rgba(239,68,68,0.08)' : 'var(--surface)',
-                      border: m.role === 'assistant' ? `1px solid ${m.isError ? 'rgba(239,68,68,0.35)' : 'var(--border)'}` : 'none',
-                      color: m.isError ? '#fca5a5' : '#e5e5e5',
-                      fontSize: 14,
-                      lineHeight: 1.55,
-                    }}
-                  >
-                    {m.content}
+                  <div style={{ position: 'relative', maxWidth: '78%' }}>
+                    <div
+                      style={{
+                        padding: '11px 15px',
+                        borderRadius: m.role === 'user' ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
+                        background: m.role === 'user' ? 'var(--primary)' : m.isError ? 'rgba(239,68,68,0.08)' : 'var(--surface)',
+                        border: m.role === 'assistant' ? `1px solid ${m.isError ? 'rgba(239,68,68,0.35)' : 'var(--border)'}` : 'none',
+                        color: m.isError ? '#fca5a5' : '#e5e5e5',
+                        fontSize: 14,
+                        lineHeight: 1.55,
+                        paddingBottom: m.role === 'assistant' ? 28 : '11px',
+                      }}
+                    >
+                      {renderMessageContent(m.content)}
+                    </div>
+                    {m.role === 'assistant' && (
+                      <button
+                        onClick={() => speakMessage(m.id, m.content, m.agentId || 'albert')}
+                        title={speakingId === m.id ? 'Stop' : 'Read aloud'}
+                        style={{
+                          position: 'absolute', bottom: 6, right: 8,
+                          background: 'transparent', border: 'none', cursor: 'pointer',
+                          color: speakingId === m.id ? 'var(--primary)' : 'var(--text-muted)',
+                          display: 'flex', alignItems: 'center', padding: 2,
+                          opacity: 0.7,
+                        }}
+                      >
+                        {speakingId === m.id ? <VolumeX size={13} /> : <Volume2 size={13} />}
+                      </button>
+                    )}
                   </div>
 
                   {m.isError && m.retryText && (
@@ -802,6 +933,24 @@ export default function ChatPage() {
               outline: 'none',
             }}
           />
+          {speechSupported && (
+            <button
+              onClick={toggleListening}
+              title={isListening ? 'Stop listening' : 'Speak'}
+              style={{
+                background: isListening ? 'rgba(239,68,68,0.15)' : 'transparent',
+                border: `1px solid ${isListening ? 'rgba(239,68,68,0.6)' : 'var(--border)'}`,
+                borderRadius: '50%',
+                width: 40, height: 40, minWidth: 40,
+                color: isListening ? '#f87171' : 'var(--text-muted)',
+                cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                animation: isListening ? 'pulse 1.2s ease-in-out infinite' : 'none',
+              }}
+            >
+              {isListening ? <MicOff size={16} /> : <Mic size={16} />}
+            </button>
+          )}
           <button
             onClick={() => send()}
             disabled={loading || (!input.trim() && attachments.length === 0)}
