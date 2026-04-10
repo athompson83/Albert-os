@@ -9,6 +9,7 @@ export type Agent = {
   color: string;
   isDefault?: boolean;
   sessionId: string;
+  avatar?: string;
 };
 
 type AgentPanelProps = {
@@ -38,8 +39,10 @@ export default function AgentPanel({ agents, activeAgentId, onSelect, onAddAgent
               }`}
             >
               <div className="flex items-center gap-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-full text-base" style={{ backgroundColor: agent.color }}>
-                  {agent.emoji}
+                <div className="flex h-9 w-9 items-center justify-center rounded-full text-base overflow-hidden" style={{ backgroundColor: agent.color }}>
+                  {agent.avatar
+                    ? <img src={agent.avatar} alt={agent.name} className="h-full w-full object-cover rounded-full" />
+                    : agent.emoji}
                 </div>
                 <div className="min-w-0">
                   <div className="truncate text-sm font-medium text-gray-100">{agent.name}</div>

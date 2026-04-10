@@ -12,6 +12,7 @@ export async function GET() {
         color: '#6366f1',
         isDefault: true,
         sessionId: 'albert-os-web',
+        avatar: '/avatars/albert.png',
       },
       {
         id: 'assemble',
@@ -21,6 +22,7 @@ export async function GET() {
         description: 'Assemble SaaS — courses, certs, revenue.',
         color: '#10b981',
         sessionId: 'agent-assemble',
+        avatar: '/avatars/assemble.png',
       },
       {
         id: 'sentinelqa',
@@ -30,6 +32,7 @@ export async function GET() {
         description: 'CQS/CQI scoring, QA workflows, EMS outcomes.',
         color: '#ef4444',
         sessionId: 'agent-sentinelqa',
+        avatar: '/avatars/sentinelqa.png',
       },
       {
         id: 'apex360',
@@ -39,6 +42,7 @@ export async function GET() {
         description: 'Evals, FTO tracking, Aladtec integration.',
         color: '#f59e0b',
         sessionId: 'agent-apex360',
+        avatar: '/avatars/apex360.png',
       },
       {
         id: 'ai-business',
@@ -48,6 +52,7 @@ export async function GET() {
         description: 'Content automation, affiliate, revenue ops.',
         color: '#8b5cf6',
         sessionId: 'agent-ai-business',
+        avatar: '/avatars/operator.png',
       },
     ],
   });

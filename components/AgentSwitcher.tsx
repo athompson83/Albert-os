@@ -23,12 +23,14 @@ export default function AgentSwitcher({ agents, activeAgentId, onSelect }: Agent
               }`}
             >
               <div
-                className={`mx-auto mb-1 flex h-9 w-9 items-center justify-center rounded-full text-base ${
+                className={`mx-auto mb-1 flex h-9 w-9 items-center justify-center rounded-full text-base overflow-hidden ${
                   active ? 'ring-2 ring-offset-2 ring-offset-gray-900 ring-indigo-400' : ''
                 }`}
                 style={{ backgroundColor: agent.color, boxShadow: active ? `0 0 14px ${agent.color}` : undefined }}
               >
-                {agent.emoji}
+                {agent.avatar
+                  ? <img src={agent.avatar} alt={agent.name} className="h-full w-full object-cover rounded-full" />
+                  : agent.emoji}
               </div>
               <div className="text-xs font-medium text-gray-200">{agent.name}</div>
             </button>
