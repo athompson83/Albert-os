@@ -16,8 +16,13 @@ export async function GET(req: NextRequest) {
 
   try {
     const r = await fetch(`${GW}/history?${params}`, { headers: H, signal: AbortSignal.timeout(10000) });
-    return NextResponse.json(await r.json());
+    if (!r.ok) {
+      console.error('History upstream error:', r.status);
+      return NextResponse.json({ conversations: [], total: 0, byProject: {}, error: `Upstream ${r.status}` }, { status: 200 });
+    }
+    return NextResponse.json(await r.json(), { status: 200 });
   } catch (e) {
-    return NextResponse.json({ conversations: [], total: 0, byProject: {}, error: String(e) });
+    console.error('History fetch error:', String(e));
+    return NextResponse.json({ conversations: [], total: 0, byProject: {}, error: String(e) }, { status: 200 });
   }
 }
