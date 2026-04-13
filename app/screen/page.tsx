@@ -8,7 +8,8 @@ const PROXY = process.env.NEXT_PUBLIC_PROXY_URL || 'https://legwork-brisket-anyp
 type ScreenMode = 'idle' | 'sharing' | 'paused';
 type CaptureInterval = 10 | 30 | 60;
 
-interface Capture { url: string; timestamp: string; thumb?: string; }
+interface Capture { url: string; timestamp: string; thumb?: string; description?: string; }
+interface LogEntry { id: string; timestamp: string; screenshotUrl: string; userContext: string; description: string; tags: string[]; notes: string; }
 
 export default function ScreenPage() {
   const router = useRouter();
@@ -61,14 +62,25 @@ export default function ScreenPage() {
         const res = await fetch(`${PROXY}/screen`, {
           method: 'POST',
           body: form,
-          headers: { 'ngrok-skip-browser-warning': 'true' },
+          headers: { 'ngrok-skip-browser-warning': 'true', 'x-screen-context': context },
         });
         const data = await res.json();
         const fileUrl = data.files?.[0]?.url;
         if (fileUrl) {
           setCaptures(prev => [{ url: fileUrl, timestamp: new Date().toLocaleTimeString(), thumb: dataUrl }, ...prev.slice(0, 19)]);
           setCaptureCount(c => c + 1);
-          setStatus(`Last capture: ${new Date().toLocaleTimeString()}`);
+          setStatus(`Captured — analyzing...`);
+          setTimeout(async () => {
+            try {
+              const logRes = await fetch(`${PROXY}/screen/log?limit=1`, { headers: { 'ngrok-skip-browser-warning': 'true' } });
+              const logData = await logRes.json();
+              const latest = logData.entries?.[0];
+              if (latest?.description) {
+                setCaptures(prev => prev.map((c, i) => i === 0 ? { ...c, description: latest.description } : c));
+                setStatus(`✓ ${latest.description.slice(0, 80)}`);
+              }
+            } catch {}
+          }, 8000);
         }
       } catch (e) {
         setStatus('Capture failed — proxy unreachable');
@@ -249,9 +261,13 @@ export default function ScreenPage() {
             </h3>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 8 }}>
               {captures.map((c, i) => (
-                <div key={i} style={{ position: 'relative', cursor: 'pointer' }} onClick={() => c.thumb && openInChat(c.thumb)}>
-                  {c.thumb && <img src={c.thumb} alt={`Capture ${i}`} style={{ width: '100%', borderRadius: 6, border: s.border }} />}
-                  <div style={{ fontSize: 10, color: s.muted, textAlign: 'center', marginTop: 4 }}>{c.timestamp}</div>
+                <div key={i} style={{ cursor: 'pointer', background: 'var(--surface-2)', borderRadius: 8, border: s.border, overflow: 'hidden' }} onClick={() => c.thumb && openInChat(c.thumb)}>
+                  {c.thumb && <img src={c.thumb} alt={`Capture ${i}`} style={{ width: '100%', display: 'block' }} />}
+                  <div style={{ padding: '6px 8px' }}>
+                    <div style={{ fontSize: 10, color: s.muted }}>{c.timestamp}</div>
+                    {c.description && <div style={{ fontSize: 11, color: s.text, marginTop: 3, lineHeight: 1.4 }}>{c.description.slice(0, 100)}...</div>}
+                    {!c.description && <div style={{ fontSize: 10, color: s.muted, fontStyle: 'italic' }}>Analyzing...</div>}
+                  </div>
                 </div>
               ))}
             </div>
