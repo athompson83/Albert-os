@@ -5,12 +5,13 @@ import { useState, useEffect } from 'react';
 import {
   LayoutDashboard, MessageSquare, FolderKanban,
   Users, GitBranch, CheckSquare, Plug, FileText, Terminal, ScrollText,
-  Newspaper, Menu, X, Scissors
+  Newspaper, Menu, X, Scissors, Monitor
 } from 'lucide-react';
 
 const nav = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/chat', label: 'Chat', icon: MessageSquare },
+  { href: '/screen', label: 'Screen Share', icon: Monitor },
   { href: '/clipping', label: 'Clipping', icon: Scissors },
   { href: '/agents', label: 'Agents', icon: Users },
   { href: '/workflows', label: 'Workflows', icon: GitBranch },
