@@ -6,7 +6,7 @@ import {
   Scissors, CheckCircle2, Clock, AlertCircle, ExternalLink,
   ChevronDown, ChevronUp, DollarSign, Zap, BarChart3, Plus,
   RefreshCw, Play, Send, Trash2, Film, TrendingUp, Eye,
-  Instagram, Youtube, Music2, Globe
+  Music2, Globe
 } from 'lucide-react';
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -172,9 +172,9 @@ function loadActions(): ActionItem[] {
 // ── Platform Rate Cards ───────────────────────────────────────────────────────
 const PLATFORMS = [
   { name: 'TikTok Creator Rewards', rpm: '$0.40–$1.00', peak: '$6.00', req: '15K followers, 150K views/28d', color: '#ff0050', icon: <Music2 size={14}/> },
-  { name: 'YouTube Long-form', rpm: '$3.00–$15.00', peak: '$50+', req: '1K subs + 4K watch hours', color: '#ff0000', icon: <Youtube size={14}/> },
-  { name: 'YouTube Shorts', rpm: '$0.03–$0.08', peak: '$0.35', req: '1K subs + 10M Shorts views/90d', color: '#ff0000', icon: <Youtube size={14}/> },
-  { name: 'Instagram Reels', rpm: '$0.01–$0.05', peak: '$0.10', req: 'Invite-only monetization', color: '#e1306c', icon: <Instagram size={14}/> },
+  { name: 'YouTube Long-form', rpm: '$3.00–$15.00', peak: '$50+', req: '1K subs + 4K watch hours', color: '#ff0000', icon: <Globe size={14}/> },
+  { name: 'YouTube Shorts', rpm: '$0.03–$0.08', peak: '$0.35', req: '1K subs + 10M Shorts views/90d', color: '#ff0000', icon: <Globe size={14}/> },
+  { name: 'Instagram Reels', rpm: '$0.01–$0.05', peak: '$0.10', req: 'Invite-only monetization', color: '#e1306c', icon: <Music2 size={14}/> },
 ];
 
 // ── Revenue Calculator ────────────────────────────────────────────────────────
