@@ -322,6 +322,32 @@ export default function ChatPage() {
       }
 
       setLoading(true);
+
+      // ── Auto-detect and save credentials ────────────────────────────────
+      // Detect API keys / tokens and auto-save to config before sending to Albert
+      const credPatterns: Array<{ pattern: RegExp; key: string; label: string }> = [
+        { pattern: /sl\.u\.[A-Za-z0-9_\-]{60,}/, key: 'dropbox_access_token', label: 'Dropbox token' },
+        { pattern: /eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9\.[A-Za-z0-9_\-]+\.[A-Za-z0-9_\-]+/, key: 'reap_api_key', label: 'Reap API key' },
+      ];
+      for (const { pattern, key, label } of credPatterns) {
+        const match = text.match(pattern);
+        if (match) {
+          try {
+            const r = await fetch('/api/config/write', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ key, value: match[0] }),
+            });
+            if (r.ok) {
+              console.log(`Auto-saved ${label} to config`);
+            }
+          } catch (e) {
+            console.error('Auto-save failed:', e);
+          }
+        }
+      }
+      // ────────────────────────────────────────────────────────────────────
+
       try {
         const { reply, project } = await callChat(text, atts, selectedAgent.id);
         const isError = ERROR_PHRASES.some((p) => reply.toLowerCase().includes(p));
