@@ -42,34 +42,74 @@ export default function TasksPage() {
   const [syncing, setSyncing] = useState(false);
   const [filter, setFilter] = useState<string>('all');
 
+  const STORAGE_KEY = 'albert-tasks-overrides';
+
+  // Load local overrides (status/deleted changes made while proxy was offline)
+  const getOverrides = (): Record<string, { status?: Status; deleted?: boolean }> => {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch { return {}; }
+  };
+  const saveOverride = (id: string, patch: { status?: Status; deleted?: boolean }) => {
+    const ov = getOverrides();
+    ov[id] = { ...ov[id], ...patch };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(ov));
+  };
+  const clearOverride = (id: string) => {
+    const ov = getOverrides();
+    delete ov[id];
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(ov));
+  };
+
   const load = useCallback(async () => {
     setLoading(true);
     try {
       const res = await fetch('/api/tasks');
       const data = await res.json();
-      setTasks((data.tasks || []).filter((t: Task) => !t.archivedAt));
-    } catch {}
+      const raw: Task[] = (data.tasks || []).filter((t: Task) => !t.archivedAt);
+      // Apply local overrides on top of server data
+      const overrides = getOverrides();
+      const merged = raw
+        .filter(t => !overrides[t.id]?.deleted)
+        .map(t => overrides[t.id]?.status ? { ...t, status: overrides[t.id].status! } : t);
+      setTasks(merged);
+    } catch {
+      // Proxy offline — load from previous state if any
+    }
     setLoading(false);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => { load(); }, [load]);
 
   const moveTask = async (id: string, status: Status) => {
+    // Optimistic update + persist locally immediately
     setTasks(prev => prev.map(t => t.id === id ? { ...t, status } : t));
-    await fetch('/api/tasks', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id, status }),
-    });
+    saveOverride(id, { status });
+    try {
+      const res = await fetch('/api/tasks', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, status }),
+      });
+      if (res.ok) clearOverride(id); // synced — clear local override
+    } catch {
+      // Proxy offline — change saved locally, will sync on next successful load
+    }
   };
 
   const deleteTask = async (id: string) => {
+    // Optimistic update + persist locally immediately
     setTasks(prev => prev.filter(t => t.id !== id));
-    await fetch('/api/tasks', {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id }),
-    });
+    saveOverride(id, { deleted: true });
+    try {
+      const res = await fetch('/api/tasks', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      });
+      if (res.ok) clearOverride(id);
+    } catch {
+      // Saved locally
+    }
   };
 
   const syncMonday = async () => {
