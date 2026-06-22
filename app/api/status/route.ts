@@ -1,10 +1,12 @@
 import { NextResponse } from 'next/server';
 import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
+import { getHermesState } from '@/lib/hermes-gateway';
 
 export const runtime = 'nodejs';
 
 export async function GET() {
+  const hermes = getHermesState();
   const statusPath = join(process.cwd(), 'STATUS.md');
   const summaryPath = join(process.cwd(), 'SUMMARY.md');
 
@@ -22,14 +24,36 @@ export async function GET() {
   const pendingItems = extractPendingItems(status);
 
   return NextResponse.json({
-    proxy: status.includes('Active') ? 'online' : 'offline',
-    agents: countMatches(status, /Agent:/g) || 1,
-    workflows: countMatches(summary, /^\d+\.\s+\*\*/gm) || 0,
-    activeWorkflows: countMatches(status, /Next Steps|Autonomous/gi) || 0,
+    proxy: 'online',
+    hermes: {
+      connected: true,
+      connectedAt: hermes.connectedAt,
+      lastUpdatedAt: hermes.lastUpdatedAt,
+      events: hermes.events.slice(0, 5),
+      endpoints: ['/agent', '/hermes/agents', '/hermes/tasks', '/hermes/credentials', '/hermes/products', '/hermes/events'],
+    },
+    agents: hermes.agents.length || countMatches(status, /Agent:/g) || 1,
+    workflows: hermes.workflows.length || countMatches(summary, /^\d+\.\s+\*\*/gm) || 0,
+    activeWorkflows: hermes.workflows.filter(workflow => workflow.enabled).length || countMatches(status, /Next Steps|Autonomous/gi) || 0,
+    products: hermes.products.filter(product => product.status !== 'removed').length,
+    credentialsRequested: hermes.tasks.filter(task => task.requestKind === 'credential' && task.status !== 'done' && !task.archivedAt).length,
     session: {
       date: new Date().toISOString(),
       summary: summaryItems.length ? summaryItems : ['Albert OS is connected and reporting status.'],
-      pending: pendingItems,
+      pending: [
+        ...hermes.tasks
+          .filter(task => task.assignedTo === 'adam' && task.status !== 'done' && !task.archivedAt)
+          .slice(0, 6)
+          .map(task => ({
+            id: task.id,
+            text: task.title,
+            type: 'task' as const,
+            href: `/tasks?task=${task.id}`,
+            priority: task.priority,
+            tag: task.requestKind === 'credential' ? 'Credentials' : task.project || 'Hermes',
+          })),
+        ...pendingItems,
+      ],
     },
     raw: {
       status,

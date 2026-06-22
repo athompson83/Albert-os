@@ -15,6 +15,13 @@ interface Task {
   dueDate?: string;
   source?: string;
   archivedAt?: string;
+  assignedTo?: 'adam' | 'hermes' | 'albert';
+  requestKind?: 'general' | 'credential' | 'product_review' | 'approval';
+  requestedFields?: Array<{ key: string; label: string; type: 'text' | 'password' | 'url' | 'textarea'; required?: boolean }>;
+  response?: Record<string, string>;
+  notes?: string;
+  productId?: string;
+  updatedAt?: string;
 }
 
 const COLUMNS: { id: Status; label: string; color: string }[] = [
@@ -41,6 +48,9 @@ export default function TasksPage() {
   const [dragging, setDragging] = useState<string | null>(null);
   const [syncing, setSyncing] = useState(false);
   const [filter, setFilter] = useState<string>('all');
+  const [selected, setSelected] = useState<Task | null>(null);
+  const [response, setResponse] = useState<Record<string, string>>({});
+  const [savingResponse, setSavingResponse] = useState(false);
 
   const STORAGE_KEY = 'albert-tasks-overrides';
 
@@ -71,11 +81,13 @@ export default function TasksPage() {
         .filter(t => !overrides[t.id]?.deleted)
         .map(t => overrides[t.id]?.status ? { ...t, status: overrides[t.id].status! } : t);
       setTasks(merged);
+      const requestedId = new URLSearchParams(window.location.search).get('task');
+      const requested = requestedId ? merged.find(t => t.id === requestedId) : null;
+      if (requested) openTask(requested);
     } catch {
       // Proxy offline — load from previous state if any
     }
     setLoading(false);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => { load(); }, [load]);
@@ -93,6 +105,62 @@ export default function TasksPage() {
       if (res.ok) clearOverride(id); // synced — clear local override
     } catch {
       // Proxy offline — change saved locally, will sync on next successful load
+    }
+  };
+
+  const openTask = (task: Task) => {
+    setSelected(task);
+    setResponse(task.response || {});
+  };
+
+  const submitTaskResponse = async () => {
+    if (!selected) return;
+    setSavingResponse(true);
+    try {
+      let taskResponse = response;
+      if (selected.requestKind === 'credential') {
+        for (const field of selected.requestedFields || []) {
+          const value = response[field.key];
+          if (value?.trim()) {
+            await fetch('/api/credentials', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                key: field.key,
+                label: field.label,
+                value,
+                requestedBy: 'Hermes',
+              }),
+            });
+          }
+        }
+        taskResponse = Object.fromEntries(
+          Object.entries(response).map(([key, value]) => [
+            key,
+            key === '__notes' ? value : value ? `${value.slice(0, 4)}...${value.slice(-4)}` : '',
+          ]),
+        );
+      }
+
+      const nextStatus: Status = selected.requestKind === 'credential' ? 'review' : selected.status;
+      const res = await fetch('/api/tasks', {
+        method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: selected.id,
+          response: taskResponse,
+          notes: taskResponse.__notes || selected.notes,
+          status: nextStatus,
+        }),
+      });
+      const data = await res.json();
+      if (data.task) {
+        setTasks(prev => prev.map(t => t.id === data.task.id ? data.task : t));
+        setSelected(data.task);
+        clearOverride(selected.id);
+      }
+    } finally {
+      setSavingResponse(false);
     }
   };
 
@@ -182,9 +250,10 @@ export default function TasksPage() {
                       <div key={task.id}
                         draggable
                         onDragStart={() => onDragStart(task.id)}
+                        onClick={() => openTask(task)}
                         style={{
                           background: 'var(--surface)', border: '1px solid var(--border)',
-                          borderRadius: 10, padding: '12px 14px', cursor: 'grab',
+                          borderRadius: 10, padding: '12px 14px', cursor: 'pointer',
                           transition: 'border-color 0.15s',
                         }}
                         onMouseEnter={e => (e.currentTarget.style.borderColor = '#6366f1')}
@@ -210,6 +279,11 @@ export default function TasksPage() {
                               {SOURCE_BADGE[task.source].label}
                             </span>
                           )}
+                          {task.requestKind === 'credential' && (
+                            <span style={{ fontSize: 10, padding: '1px 6px', borderRadius: 8, background: '#ef444422', color: '#fca5a5', border: '1px solid #ef444444' }}>
+                              Credentials
+                            </span>
+                          )}
                           {task.dueDate && (
                             <span style={{ fontSize: 10, color: 'var(--text-muted)', marginLeft: 'auto' }}>
                               📅 {task.dueDate}
@@ -220,18 +294,18 @@ export default function TasksPage() {
                         {/* Actions */}
                         <div style={{ display: 'flex', gap: 4, marginTop: 8 }}>
                           {col.id !== 'done' && (
-                            <button onClick={() => moveTask(task.id, 'done')} style={{
+                            <button onClick={(e) => { e.stopPropagation(); moveTask(task.id, 'done'); }} style={{
                               background: '#10b98115', border: '1px solid #10b98144', borderRadius: 5,
                               color: '#10b981', fontSize: 11, padding: '2px 8px', cursor: 'pointer',
                             }}>✓ Done</button>
                           )}
                           {col.id === 'todo' && (
-                            <button onClick={() => moveTask(task.id, 'inprogress')} style={{
+                            <button onClick={(e) => { e.stopPropagation(); moveTask(task.id, 'inprogress'); }} style={{
                               background: '#6366f115', border: '1px solid #6366f144', borderRadius: 5,
                               color: '#a5b4fc', fontSize: 11, padding: '2px 8px', cursor: 'pointer',
                             }}>→ Start</button>
                           )}
-                          <button onClick={() => deleteTask(task.id)} style={{
+                          <button onClick={(e) => { e.stopPropagation(); deleteTask(task.id); }} style={{
                             background: 'transparent', border: '1px solid var(--border)', borderRadius: 5,
                             color: 'var(--text-muted)', fontSize: 11, padding: '2px 8px', cursor: 'pointer', marginLeft: 'auto',
                           }}>✕</button>
@@ -249,6 +323,79 @@ export default function TasksPage() {
                 </div>
               );
             })}
+          </div>
+        </div>
+      )}
+
+      {selected && (
+        <div
+          onClick={() => setSelected(null)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.65)', zIndex: 140, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 18 }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{ width: '100%', maxWidth: 760, maxHeight: '88vh', overflowY: 'auto', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, padding: 20 }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 14, marginBottom: 14 }}>
+              <div>
+                <div style={{ color: '#fff', fontWeight: 700, fontSize: 18 }}>{selected.title}</div>
+                <div style={{ color: 'var(--text-muted)', fontSize: 12, marginTop: 4 }}>
+                  {selected.project || 'General'} / {selected.priority} / {selected.status}
+                </div>
+              </div>
+              <button onClick={() => setSelected(null)} style={{ background: 'transparent', border: '1px solid var(--border)', borderRadius: 7, color: 'var(--text-muted)', padding: '6px 10px', cursor: 'pointer', alignSelf: 'flex-start' }}>Close</button>
+            </div>
+
+            {selected.description && (
+              <p style={{ color: 'var(--text)', fontSize: 14, lineHeight: 1.5, margin: '0 0 16px' }}>{selected.description}</p>
+            )}
+
+            {selected.requestKind === 'credential' && (
+              <div style={{ border: '1px solid rgba(239,68,68,0.35)', background: 'rgba(239,68,68,0.08)', borderRadius: 8, padding: 12, color: '#fca5a5', fontSize: 13, marginBottom: 16 }}>
+                Hermes requested credentials for this task. Values are sent to the Hermes credential endpoint and displayed back only as masked values.
+              </div>
+            )}
+
+            <div style={{ display: 'grid', gap: 10, marginBottom: 14 }}>
+              {(selected.requestedFields || []).map(field => (
+                <label key={field.key} style={{ display: 'flex', flexDirection: 'column', gap: 6, color: '#e5e5e5', fontSize: 13 }}>
+                  {field.label}{field.required ? ' *' : ''}
+                  {field.type === 'textarea' ? (
+                    <textarea
+                      rows={4}
+                      value={response[field.key] || ''}
+                      onChange={(e) => setResponse(prev => ({ ...prev, [field.key]: e.target.value }))}
+                      style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 7, padding: 10, color: 'var(--text)', resize: 'vertical' }}
+                    />
+                  ) : (
+                    <input
+                      type={field.type}
+                      value={response[field.key] || ''}
+                      onChange={(e) => setResponse(prev => ({ ...prev, [field.key]: e.target.value }))}
+                      style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 7, padding: '9px 10px', color: 'var(--text)' }}
+                    />
+                  )}
+                </label>
+              ))}
+
+              <label style={{ display: 'flex', flexDirection: 'column', gap: 6, color: '#e5e5e5', fontSize: 13 }}>
+                Notes for Hermes
+                <textarea
+                  rows={4}
+                  value={response.__notes || selected.notes || ''}
+                  onChange={(e) => setResponse(prev => ({ ...prev, __notes: e.target.value }))}
+                  placeholder="Add context, corrections, or instructions Hermes should use."
+                  style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 7, padding: 10, color: 'var(--text)', resize: 'vertical' }}
+                />
+              </label>
+            </div>
+
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+              <button onClick={() => moveTask(selected.id, 'done')} style={{ background: '#10b98122', border: '1px solid #10b98166', borderRadius: 7, color: '#10b981', padding: '8px 12px', cursor: 'pointer' }}>Mark done</button>
+              <button onClick={submitTaskResponse} disabled={savingResponse} style={{ background: 'var(--primary)', border: '1px solid var(--primary)', borderRadius: 7, color: '#fff', padding: '8px 12px', cursor: savingResponse ? 'not-allowed' : 'pointer', opacity: savingResponse ? 0.65 : 1 }}>
+                {savingResponse ? 'Saving...' : 'Send update to Hermes'}
+              </button>
+            </div>
           </div>
         </div>
       )}

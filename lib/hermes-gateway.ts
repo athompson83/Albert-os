@@ -30,6 +30,51 @@ export type HermesTask = {
   dueDate?: string;
   source?: string;
   archivedAt?: string;
+  assignedTo?: 'adam' | 'hermes' | 'albert';
+  requestKind?: 'general' | 'credential' | 'product_review' | 'approval';
+  requestedFields?: Array<{
+    key: string;
+    label: string;
+    type: 'text' | 'password' | 'url' | 'textarea';
+    required?: boolean;
+  }>;
+  response?: Record<string, string>;
+  notes?: string;
+  productId?: string;
+  updatedAt?: string;
+};
+
+export type HermesCredential = {
+  id: string;
+  label: string;
+  key: string;
+  status: 'requested' | 'provided';
+  requestedBy: string;
+  updatedAt: string;
+  maskedValue?: string;
+};
+
+export type HermesProduct = {
+  id: string;
+  title: string;
+  description: string;
+  status: 'draft' | 'ready' | 'needs_improvement' | 'removed' | 'published';
+  type: 'pdf' | 'template' | 'site' | 'bundle';
+  downloadUrl?: string;
+  vercelUrl?: string;
+  price?: string;
+  createdAt: string;
+  updatedAt: string;
+  comments: Array<{ id: string; author: string; text: string; createdAt: string }>;
+};
+
+export type HermesEvent = {
+  id: string;
+  type: 'task_updated' | 'credential_updated' | 'product_updated' | 'status';
+  title: string;
+  detail: string;
+  timestamp: string;
+  entityId?: string;
 };
 
 export type HermesWorkflow = {
@@ -73,6 +118,11 @@ type HermesState = {
   tasks: HermesTask[];
   workflows: HermesWorkflow[];
   chats: ChatEntry[];
+  credentials: HermesCredential[];
+  products: HermesProduct[];
+  events: HermesEvent[];
+  connectedAt: string;
+  lastUpdatedAt: string;
 };
 
 const stateKey = '__albertHermesGatewayState';
@@ -139,17 +189,144 @@ function initialWorkflows(): HermesWorkflow[] {
   ];
 }
 
+function initialProducts(): HermesProduct[] {
+  const now = new Date().toISOString();
+  return [
+    {
+      id: 'prod_emt_cards',
+      title: 'EMT Quick Reference Cards',
+      description: 'Printable EMS quick-reference cards for digital product sales.',
+      status: 'ready',
+      type: 'pdf',
+      downloadUrl: '/store/pdfs/EMT_Quick_Reference_Cards.pdf',
+      price: '$9',
+      createdAt: now,
+      updatedAt: now,
+      comments: [],
+    },
+    {
+      id: 'prod_paramedic_pharm',
+      title: 'Paramedic Pharmacology Cheat Sheet',
+      description: 'Medication reference PDF prepared for the EMS digital product catalog.',
+      status: 'ready',
+      type: 'pdf',
+      downloadUrl: '/store/pdfs/Paramedic_Pharmacology_Cheat_Sheet.pdf',
+      price: '$12',
+      createdAt: now,
+      updatedAt: now,
+      comments: [],
+    },
+    {
+      id: 'prod_storefront',
+      title: 'Albert EMS Storefront',
+      description: 'Digital product storefront hosted by the app and ready for Vercel linking.',
+      status: 'published',
+      type: 'site',
+      vercelUrl: 'https://albert-os.vercel.app/store',
+      createdAt: now,
+      updatedAt: now,
+      comments: [],
+    },
+  ];
+}
+
+function initialCredentialTasks(): HermesTask[] {
+  const now = new Date().toISOString();
+  return [
+    {
+      id: 'cred_meta_instagram',
+      title: 'Provide Instagram Graph API access',
+      description: 'Hermes needs this to post and sell digital products through Instagram automation.',
+      project: 'Hermes Credentials',
+      priority: 'high',
+      status: 'todo',
+      source: 'hermes',
+      assignedTo: 'adam',
+      requestKind: 'credential',
+      requestedFields: [
+        { key: 'instagram_app_id', label: 'Meta App ID', type: 'text', required: true },
+        { key: 'instagram_app_secret', label: 'Meta App Secret', type: 'password', required: true },
+        { key: 'instagram_access_token', label: 'Instagram Access Token', type: 'password', required: true },
+      ],
+      updatedAt: now,
+    },
+    {
+      id: 'cred_fal_billing',
+      title: 'Confirm FAL.ai billing is funded',
+      description: 'Hermes needs image generation credits for product graphics and storefront assets.',
+      project: 'Hermes Credentials',
+      priority: 'medium',
+      status: 'todo',
+      source: 'hermes',
+      assignedTo: 'adam',
+      requestKind: 'credential',
+      requestedFields: [
+        { key: 'fal_api_key', label: 'FAL API Key', type: 'password', required: true },
+        { key: 'fal_billing_note', label: 'Billing note', type: 'textarea' },
+      ],
+      updatedAt: now,
+    },
+  ];
+}
+
 export function getHermesState(): HermesState {
   const globalStore = globalThis as typeof globalThis & { [stateKey]?: HermesState };
   if (!globalStore[stateKey]) {
     globalStore[stateKey] = {
       agents: initialAgents(),
-      tasks: mockTasks.map(task => ({ ...task, source: 'local' })) as HermesTask[],
+      tasks: [
+        ...initialCredentialTasks(),
+        ...mockTasks.map(task => ({
+          ...task,
+          source: 'local',
+          assignedTo: 'adam',
+          requestKind: 'general',
+          updatedAt: new Date().toISOString(),
+        })),
+      ] as HermesTask[],
       workflows: initialWorkflows(),
       chats: [],
+      credentials: [],
+      products: initialProducts(),
+      events: [],
+      connectedAt: new Date().toISOString(),
+      lastUpdatedAt: new Date().toISOString(),
     };
   }
-  return globalStore[stateKey]!;
+  const state = globalStore[stateKey]!;
+  state.credentials ||= [];
+  state.products ||= initialProducts();
+  state.events ||= [];
+  state.connectedAt ||= new Date().toISOString();
+  state.lastUpdatedAt ||= new Date().toISOString();
+  state.tasks = state.tasks.map(task => ({
+    assignedTo: 'adam',
+    requestKind: 'general',
+    updatedAt: state.lastUpdatedAt,
+    ...task,
+  }));
+  for (const credentialTask of initialCredentialTasks()) {
+    if (!state.tasks.some(task => task.id === credentialTask.id)) {
+      state.tasks.unshift(credentialTask);
+    }
+  }
+  return state;
+}
+
+function touchState() {
+  getHermesState().lastUpdatedAt = new Date().toISOString();
+}
+
+export function recordHermesEvent(event: Omit<HermesEvent, 'id' | 'timestamp'>) {
+  const state = getHermesState();
+  const entry: HermesEvent = {
+    id: `evt_${Date.now().toString(36)}`,
+    timestamp: new Date().toISOString(),
+    ...event,
+  };
+  state.events = [entry, ...state.events].slice(0, 100);
+  state.lastUpdatedAt = entry.timestamp;
+  return entry;
 }
 
 export async function createGatewayReply(message: string, agentId = 'albert') {
@@ -234,6 +411,7 @@ export function recordChat(message: string, reply: string, project = 'General', 
     attachments,
   };
   getHermesState().chats.push(entry);
+  touchState();
   return entry;
 }
 
@@ -260,13 +438,24 @@ export function upsertAgent(body: Partial<HermesAgent>) {
     state.agents.push(agent);
   }
 
+  recordHermesEvent({
+    type: 'status',
+    title: 'Agent registry updated',
+    detail: `${agent.name} was ${existing ? 'updated' : 'created'}.`,
+    entityId: agent.id,
+  });
   return agent;
 }
 
 export function upsertTask(body: Partial<HermesTask>) {
   const state = getHermesState();
+  const now = new Date().toISOString();
   const id = body.id || `task_${Date.now().toString(36)}`;
   const existing = state.tasks.find(task => task.id === id);
+  const requestKind = body.requestKind || existing?.requestKind || 'general';
+  const response = requestKind === 'credential' && body.response
+    ? Object.fromEntries(Object.entries(body.response).map(([key, value]) => [key, value ? maskCredential(String(value)) : '']))
+    : body.response || existing?.response;
   const task: HermesTask = {
     id,
     title: body.title || existing?.title || 'New task',
@@ -277,6 +466,13 @@ export function upsertTask(body: Partial<HermesTask>) {
     dueDate: body.dueDate ?? existing?.dueDate,
     source: body.source || existing?.source || 'local',
     archivedAt: body.archivedAt ?? existing?.archivedAt,
+    assignedTo: body.assignedTo || existing?.assignedTo || 'adam',
+    requestKind,
+    requestedFields: body.requestedFields || existing?.requestedFields,
+    response,
+    notes: body.notes ?? existing?.notes,
+    productId: body.productId || existing?.productId,
+    updatedAt: now,
   };
 
   if (existing) {
@@ -285,6 +481,12 @@ export function upsertTask(body: Partial<HermesTask>) {
     state.tasks.push(task);
   }
 
+  recordHermesEvent({
+    type: 'task_updated',
+    title: 'Task updated',
+    detail: `${task.title} is now ${task.status}.`,
+    entityId: task.id,
+  });
   return task;
 }
 
@@ -341,5 +543,91 @@ export function runWorkflow(id: string, input: Record<string, unknown> = {}) {
   };
   workflow.runs = [run, ...(workflow.runs || [])].slice(0, 50);
   workflow.updatedAt = run.finishedAt;
+  recordHermesEvent({
+    type: 'status',
+    title: 'Workflow run completed',
+    detail: `${workflow.name} completed with ${workflow.steps.length} step${workflow.steps.length === 1 ? '' : 's'}.`,
+    entityId: workflow.id,
+  });
   return run;
+}
+
+function maskCredential(value: string) {
+  if (!value) return '';
+  if (value.length <= 8) return '********';
+  return `${value.slice(0, 4)}...${value.slice(-4)}`;
+}
+
+export function upsertCredential(body: Partial<HermesCredential> & { value?: string }) {
+  const state = getHermesState();
+  const now = new Date().toISOString();
+  const key = body.key || body.id || `credential_${Date.now().toString(36)}`;
+  const existing = state.credentials.find(item => item.key === key || item.id === key);
+  const credential: HermesCredential = {
+    id: existing?.id || `cred_${key.replace(/[^a-z0-9_]/gi, '_').toLowerCase()}`,
+    key,
+    label: body.label || existing?.label || key,
+    status: body.value || body.status === 'provided' ? 'provided' : existing?.status || 'requested',
+    requestedBy: body.requestedBy || existing?.requestedBy || 'Hermes',
+    updatedAt: now,
+    maskedValue: body.value ? maskCredential(body.value) : existing?.maskedValue,
+  };
+
+  if (existing) {
+    state.credentials = state.credentials.map(item => (item.id === existing.id ? credential : item));
+  } else {
+    state.credentials.push(credential);
+  }
+
+  recordHermesEvent({
+    type: 'credential_updated',
+    title: 'Credential updated',
+    detail: `${credential.label} is ${credential.status}.`,
+    entityId: credential.id,
+  });
+  return credential;
+}
+
+export function upsertProduct(body: Partial<HermesProduct> & { comment?: string; author?: string }) {
+  const state = getHermesState();
+  const now = new Date().toISOString();
+  const id = body.id || `prod_${Date.now().toString(36)}`;
+  const existing = state.products.find(product => product.id === id);
+  const comments = [...(existing?.comments || [])];
+  if (body.comment?.trim()) {
+    comments.unshift({
+      id: `comment_${Date.now().toString(36)}`,
+      author: body.author || 'Adam',
+      text: body.comment.trim(),
+      createdAt: now,
+    });
+  }
+
+  const product: HermesProduct = {
+    id,
+    title: body.title || existing?.title || 'New digital product',
+    description: body.description ?? existing?.description ?? '',
+    status: body.status || existing?.status || 'draft',
+    type: body.type || existing?.type || 'pdf',
+    downloadUrl: body.downloadUrl ?? existing?.downloadUrl,
+    vercelUrl: body.vercelUrl ?? existing?.vercelUrl,
+    price: body.price ?? existing?.price,
+    createdAt: existing?.createdAt || body.createdAt || now,
+    updatedAt: now,
+    comments,
+  };
+
+  if (existing) {
+    state.products = state.products.map(item => (item.id === id ? product : item));
+  } else {
+    state.products.push(product);
+  }
+
+  recordHermesEvent({
+    type: 'product_updated',
+    title: 'Product updated',
+    detail: `${product.title} is now ${product.status.replace('_', ' ')}.`,
+    entityId: product.id,
+  });
+  return product;
 }

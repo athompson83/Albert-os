@@ -289,7 +289,7 @@ export default function Dashboard() {
                 }}
                 onMouseEnter={e => (e.currentTarget.style.borderColor = '#6366f1')}
                 onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}
-                onClick={() => router.push('/tasks')}
+                onClick={() => router.push(`/tasks?task=${task.id}`)}
               >
                 <span style={{ fontSize: 10, color: PRIORITY_COLOR[task.priority] || '#f59e0b' }}>●</span>
                 <span style={{ fontSize: 13, color: 'var(--text)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
