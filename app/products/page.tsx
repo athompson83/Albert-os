@@ -121,7 +121,19 @@ export default function ProductsPage() {
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 14 }}>
           {!loading && visible.map(product => (
-            <article key={product.id} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <article
+              key={product.id}
+              onClick={() => { setSelected(product); setComment(''); }}
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  setSelected(product);
+                  setComment('');
+                }
+              }}
+              style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: 16, display: 'flex', flexDirection: 'column', gap: 12, cursor: 'pointer', outline: 'none' }}
+            >
               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
                 <div>
                   <div style={{ color: '#fff', fontSize: 16, fontWeight: 700 }}>{product.title}</div>
@@ -134,12 +146,12 @@ export default function ProductsPage() {
               <p style={{ margin: 0, color: 'var(--text)', fontSize: 13, lineHeight: 1.45 }}>{product.description}</p>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 'auto' }}>
                 {product.downloadUrl && (
-                  <button onClick={() => downloadProduct(product)} disabled={downloadingId === product.id} style={buttonStyle('#10b981')}>
+                  <button onClick={(e) => { e.stopPropagation(); downloadProduct(product); }} disabled={downloadingId === product.id} style={buttonStyle('#10b981')}>
                     {downloadingId === product.id ? 'Downloading...' : 'Download'}
                   </button>
                 )}
-                {product.vercelUrl && <a href={product.vercelUrl} target="_blank" rel="noreferrer" style={linkButton('#38bdf8')}>Open site</a>}
-                <button onClick={() => { setSelected(product); setComment(''); }} style={buttonStyle('#6366f1')}>Review</button>
+                {product.vercelUrl && <a href={product.vercelUrl} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} style={linkButton('#38bdf8')}>Open site</a>}
+                <button onClick={(e) => { e.stopPropagation(); setSelected(product); setComment(''); }} style={buttonStyle('#6366f1')}>Review</button>
               </div>
             </article>
           ))}

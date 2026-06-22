@@ -82,8 +82,10 @@ export default function TasksPage() {
         .map(t => overrides[t.id]?.status ? { ...t, status: overrides[t.id].status! } : t);
       setTasks(merged);
       const requestedId = new URLSearchParams(window.location.search).get('task');
+      const requestedProject = new URLSearchParams(window.location.search).get('project');
       const requested = requestedId ? merged.find(t => t.id === requestedId) : null;
       if (requested) openTask(requested);
+      if (requestedProject) setFilter(requestedProject);
     } catch {
       // Proxy offline — load from previous state if any
     }

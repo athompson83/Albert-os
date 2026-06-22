@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import TopBar from '@/components/TopBar';
 
 type CapabilityStatus = 'ready' | 'needs_setup' | 'blocked';
@@ -47,7 +48,20 @@ function statusLabel(status: CapabilityStatus) {
   return status.replace('_', ' ');
 }
 
+function capabilityHref(capability: Capability) {
+  const endpoint = capability.endpoint || '';
+  if (endpoint.includes('/progress')) return '/progress';
+  if (endpoint.includes('/tasks')) return '/tasks';
+  if (endpoint.includes('/workflows') || capability.workflowId) return '/workflows';
+  if (endpoint.includes('/agents')) return '/agents';
+  if (endpoint === '/content') return '/content';
+  if (endpoint === '/clipping') return '/clipping';
+  if (endpoint === '/screen') return '/screen';
+  return '';
+}
+
 export default function CapabilitiesPage() {
+  const router = useRouter();
   const [data, setData] = useState<CapabilityResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -136,8 +150,21 @@ export default function CapabilitiesPage() {
         {loading && <div style={{ color: 'var(--text-muted)', padding: 32, textAlign: 'center' }}>Loading capabilities...</div>}
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 14 }}>
-          {!loading && capabilities.map(capability => (
-            <article key={capability.id} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {!loading && capabilities.map(capability => {
+            const href = capabilityHref(capability);
+            return (
+            <article
+              key={capability.id}
+              onClick={() => { if (href) router.push(href); }}
+              tabIndex={href ? 0 : undefined}
+              onKeyDown={(e) => {
+                if (href && (e.key === 'Enter' || e.key === ' ')) {
+                  e.preventDefault();
+                  router.push(href);
+                }
+              }}
+              style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: 16, display: 'flex', flexDirection: 'column', gap: 12, cursor: href ? 'pointer' : 'default', outline: 'none' }}
+            >
               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
                 <div>
                   <div style={{ color: '#fff', fontSize: 16, fontWeight: 700 }}>{capability.name}</div>
@@ -178,7 +205,8 @@ export default function CapabilitiesPage() {
                 </div>
               )}
             </article>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>

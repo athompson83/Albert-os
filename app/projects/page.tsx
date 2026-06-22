@@ -1,5 +1,6 @@
 import TopBar from '@/components/TopBar';
 import { mockProjects } from '@/lib/mock-data';
+import Link from 'next/link';
 
 const categories = ['EMS Leadership', 'Wealth Building', 'Personal'];
 
@@ -21,7 +22,8 @@ export default function ProjectsPage() {
               <h2 style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 12px' }}>{cat}</h2>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 12 }}>
                 {projects.map(p => (
-                  <div key={p.id} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, padding: 20, cursor: 'pointer', transition: 'border-color 0.15s' }}>
+                  <Link key={p.id} href={`/tasks?project=${encodeURIComponent(p.name)}`} style={{ textDecoration: 'none' }}>
+                  <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, padding: 20, cursor: 'pointer', transition: 'border-color 0.15s' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
                       <div style={{ width: 10, height: 10, borderRadius: '50%', background: p.color, marginTop: 4 }} />
                       <span style={{ fontSize: 11, padding: '3px 8px', borderRadius: 20, background: 'rgba(16,185,129,0.15)', color: '#10b981', fontWeight: 500 }}>{p.status}</span>
@@ -33,6 +35,7 @@ export default function ProjectsPage() {
                       <span>Updated {p.lastUpdated}</span>
                     </div>
                   </div>
+                  </Link>
                 ))}
               </div>
             </div>

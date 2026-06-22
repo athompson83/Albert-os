@@ -124,7 +124,7 @@ export default function Dashboard() {
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
 
   const statCards = [
-    { label: 'System', value: status?.proxy === 'online' ? 'Online' : status ? 'Offline' : '…', color: status?.proxy === 'online' ? '#10b981' : '#ef4444', emoji: status?.proxy === 'online' ? '🟢' : '🔴', href: null },
+    { label: 'System', value: status?.proxy === 'online' ? 'Online' : status ? 'Offline' : '…', color: status?.proxy === 'online' ? '#10b981' : '#ef4444', emoji: status?.proxy === 'online' ? '🟢' : '🔴', href: '/progress' },
     { label: 'AI Agents', value: status?.agents ?? '…', color: '#6366f1', emoji: '🤖', href: '/agents' },
     { label: 'Workflows', value: status?.workflows ?? '…', color: '#8b5cf6', emoji: '⚡', href: '/workflows' },
     { label: 'Active', value: status?.activeWorkflows ?? '…', color: '#f59e0b', emoji: '▶️', href: '/workflows' },
@@ -135,8 +135,8 @@ export default function Dashboard() {
     { href: '/agents', label: 'Agents', emoji: '🤖', desc: 'Manage specialists' },
     { href: '/workflows', label: 'Workflows', emoji: '⚡', desc: 'Automate tasks' },
     { href: '/tasks', label: 'Tasks', emoji: '✅', desc: 'Task board' },
+    { href: '/products', label: 'Products', emoji: '📦', desc: 'Review output' },
     { href: '/files', label: 'Files', emoji: '📁', desc: 'Browse uploads' },
-    { href: '/logs', label: 'Logs', emoji: '📋', desc: 'Chat history' },
   ];
 
   const visiblePending = (status?.session.pending || []).filter(p => !dismissed.includes(p.id));

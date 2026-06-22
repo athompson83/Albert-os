@@ -264,6 +264,14 @@ export default function AgentsPage() {
             {agents.map((agent) => (
               <div
                 key={agent.id}
+                onClick={() => openEdit(agent)}
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    openEdit(agent);
+                  }
+                }}
                 style={{
                   background: 'var(--surface)',
                   border: '1px solid var(--border)',
@@ -273,6 +281,8 @@ export default function AgentsPage() {
                   flexDirection: 'column',
                   alignItems: 'center',
                   gap: 12,
+                  cursor: 'pointer',
+                  outline: 'none',
                 }}
               >
                 <Avatar agent={agent} />
@@ -281,7 +291,7 @@ export default function AgentsPage() {
                 <div style={{ color: 'var(--text)', fontSize: 14, textAlign: 'center', minHeight: 42 }}>{agent.description}</div>
                 <div style={{ display: 'flex', gap: 8, marginTop: 'auto' }}>
                   <button
-                    onClick={() => openEdit(agent)}
+                    onClick={(e) => { e.stopPropagation(); openEdit(agent); }}
                     style={{
                       background: 'transparent',
                       color: 'var(--text)',
@@ -294,7 +304,7 @@ export default function AgentsPage() {
                     Edit
                   </button>
                   <button
-                    onClick={() => deleteAgent(agent)}
+                    onClick={(e) => { e.stopPropagation(); deleteAgent(agent); }}
                     style={{
                       background: 'transparent',
                       color: '#fca5a5',

@@ -30,7 +30,7 @@ export default function FilesPage() {
             </thead>
             <tbody>
               {files.map((f, i) => (
-                <tr key={f.name} style={{ borderBottom: i < files.length - 1 ? '1px solid var(--border)' : 'none', cursor: 'pointer' }}>
+                <tr key={f.name} style={{ borderBottom: i < files.length - 1 ? '1px solid var(--border)' : 'none' }}>
                   <td style={{ padding: '12px 16px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                       <span style={{ fontSize: 18 }}>{icons[f.type] || icons.default}</span>

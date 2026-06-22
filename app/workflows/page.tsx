@@ -301,7 +301,7 @@ export default function WorkflowsPage() {
         )}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 16 }}>
           {workflows.map(wf => (
-            <div key={wf.id} style={{ background: s.surface, border: '1px solid var(--border)', borderRadius: 12, padding: 18 }}>
+            <div key={wf.id} onClick={() => setSelected(wf)} style={{ background: s.surface, border: '1px solid var(--border)', borderRadius: 12, padding: 18, cursor: 'pointer' }}>
               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 8 }}>
                 <div style={{ cursor: 'pointer', flex: 1 }} onClick={() => setSelected(wf)}>
                   <div style={{ fontWeight: 700, fontSize: 15, color: s.text, marginBottom: 4 }}>{wf.name}</div>
@@ -316,11 +316,11 @@ export default function WorkflowsPage() {
                 </label>
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
-                <button onClick={() => runWorkflow(wf)} disabled={runningId === wf.id} style={{ flex: 1, background: '#10b98115', border: '1px solid #10b98144', borderRadius: 7, padding: '7px', color: '#10b981', cursor: 'pointer', fontSize: 12 }}>
+                <button onClick={(e) => { e.stopPropagation(); runWorkflow(wf); }} disabled={runningId === wf.id} style={{ flex: 1, background: '#10b98115', border: '1px solid #10b98144', borderRadius: 7, padding: '7px', color: '#10b981', cursor: 'pointer', fontSize: 12 }}>
                   {runningId === wf.id ? '⏳' : '▶'} Run
                 </button>
-                <button onClick={() => setSelected(wf)} style={{ flex: 1, background: 'transparent', border: '1px solid var(--border)', borderRadius: 7, padding: '7px', color: s.muted, cursor: 'pointer', fontSize: 12 }}>Edit</button>
-                <button onClick={() => deleteWorkflow(wf.id)} style={{ background: 'transparent', border: '1px solid var(--border)', borderRadius: 7, padding: '7px 10px', color: '#ef4444', cursor: 'pointer', fontSize: 12 }}>✕</button>
+                <button onClick={(e) => { e.stopPropagation(); setSelected(wf); }} style={{ flex: 1, background: 'transparent', border: '1px solid var(--border)', borderRadius: 7, padding: '7px', color: s.muted, cursor: 'pointer', fontSize: 12 }}>Edit</button>
+                <button onClick={(e) => { e.stopPropagation(); deleteWorkflow(wf.id); }} style={{ background: 'transparent', border: '1px solid var(--border)', borderRadius: 7, padding: '7px 10px', color: '#ef4444', cursor: 'pointer', fontSize: 12 }}>✕</button>
               </div>
             </div>
           ))}
