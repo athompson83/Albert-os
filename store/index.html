@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EMT Quick Reference Cards | EMS Study Guides</title>
+<meta name="description" content="Printable PDF study guides for EMT & Paramedic students. Quick reference cards with vital signs, drug doses, algorithms, and more.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --red:#DC2626;--red-dark:#991B1B;--red-light:#FEE2E2;
+  --blue:#1E40AF;--blue-dark:#1E3A5F;
+  --gray-50:#F9FAFB;--gray-100:#F3F4F6;--gray-200:#E5E7EB;
+  --gray-600:#4B5563;--gray-800:#1F2937;--gray-900:#111827;
+  --green:#059669;
+}
+body{font-family:'Inter',-apple-system,sans-serif;color:var(--gray-900);line-height:1.6;background:#fff}
+.container{max-width:1100px;margin:0 auto;padding:0 24px}
+
+/* NAV */
+.nav{background:var(--gray-900);padding:16px 0;position:sticky;top:0;z-index:100}
+.nav .container{display:flex;align-items:center;justify-content:space-between}
+.nav-logo{color:#fff;font-weight:800;font-size:1.25rem;text-decoration:none}
+.nav-logo span{color:var(--red)}
+.nav-links{display:flex;gap:24px;list-style:none}
+.nav-links a{color:var(--gray-200);text-decoration:none;font-size:.9rem;font-weight:500;transition:color .2s}
+.nav-links a:hover{color:#fff}
+
+/* HERO */
+.hero{background:linear-gradient(135deg,var(--gray-900) 0%,1a1a2e 100%);color:#fff;padding:80px 0;text-align:center}
+.hero h1{font-size:clamp(2rem,5vw,3.25rem);font-weight:900;line-height:1.1;margin-bottom:16px}
+.hero h1 span{color:var(--red)}
+.hero p{font-size:1.15rem;color:var(--gray-200);max-width:600px;margin:0 auto 32px}
+.hero-buttons{display:flex;gap:16px;justify-content:center;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:14px 32px;border-radius:8px;font-weight:700;font-size:1rem;text-decoration:none;cursor:pointer;transition:all .2s;border:none}
+.btn-primary{background:var(--red);color:#fff}
+.btn-primary:hover{background:var(--red-dark);transform:translateY(-1px)}
+.btn-secondary{background:transparent;color:#fff;border:2px solid rgba(255,255,255,.3)}
+.btn-secondary:hover{border-color:#fff}
+.btn-lg{padding:18px 40px;font-size:1.1rem}
+
+/* PRODUCTS */
+.products{padding:80px 0;background:var(--gray-50)}
+.section-title{text-align:center;font-size:2rem;font-weight:800;margin-bottom:8px}
+.section-subtitle{text-align:center;color:var(--gray-600);margin-bottom:48px;font-size:1.05rem}
+.product-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:32px}
+.product-card{background:#fff;border-radius:16px;padding:32px;border:2px solid var(--gray-100);transition:all .3s;position:relative}
+.product-card:hover{border-color:var(--red);transform:translateY(-4px);box-shadow:0 20px 40px rgba(0,0,0,.08)}
+.product-card.featured{border-color:var(--red);box-shadow:0 8px 30px rgba(220,38,38,.15)}
+.product-card.featured::before{content:'BEST VALUE';position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:var(--red);color:#fff;font-size:.7rem;font-weight:700;padding:4px 16px;border-radius:20px;letter-spacing:.5px}
+.product-icon{font-size:2.5rem;margin-bottom:16px}
+.product-card h3{font-size:1.25rem;font-weight:700;margin-bottom:8px}
+.product-card .price{font-size:2rem;font-weight:800;color:var(--red);margin:12px 0}
+.product-card .price span{font-size:1rem;font-weight:400;color:var(--gray-600)}
+.product-features{list-style:none;margin:20px 0}
+.product-features li{padding:6px 0;font-size:.9rem;color:var(--gray-600);display:flex;align-items:flex-start;gap:8px}
+-product-features li::before{content:'✓';color:var(--green);font-weight:700;flex-shrink:0}
+.product-card .btn{width:100%;justify-content:center;margin-top:8px}
+
+/* WHAT'S INCLUDED */
+.includes{padding:80px 0}
+.includes-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:24px;margin-top:40px}
+.include-item{background:var(--gray-50);padding:24px;border-radius:12px;text-align:center}
+.include-item .icon{font-size:2rem;margin-bottom:8px}
+.include-item h4{font-weight:700;margin-bottom:4px;font-size:.95rem}
+.include-item p{font-size:.85rem;color:var(--gray-600)}
+
+/* SOCIAL PROOF */
+.proof{padding:60px 0;background:var(--gray-900);color:#fff;text-align:center}
+.proof h2{font-size:1.5rem;font-weight:700;margin-bottom:24px}
+.proof-stats{display:flex;justify-content:center;gap:48px;flex-wrap:wrap}
+.stat-number{font-size:2.5rem;font-weight:800;color:var(--red)}
+.stat-label{font-size:.85rem;color:var(--gray-200)}
+
+/* FAQ */
+.faq{padding:80px 0;background:var(--gray-50)}
+.faq-list{max-width:700px;margin:40px auto 0}
+.faq-item{background:#fff;border-radius:12px;padding:24px;margin-bottom:16px;border:1px solid var(--gray-200)}
+.faq-item h4{font-weight:700;margin-bottom:8px;font-size:1rem}
+.faq-item p{font-size:.9rem;color:var(--gray-600)}
+
+/* FOOTER */
+.footer{background:var(--gray-900);color:var(--gray-200);padding:40px 0;text-align:center;font-size:.85rem}
+.footer a{color:var(--gray-200)}
+
+@media(max-width:640px){
+  .hero{padding:60px 0}
+  .hero h1{font-size:1.75rem}
+  .product-grid{grid-template-columns:1fr}
+  .proof-stats{gap:24px}
+  .stat-number{font-size:2rem}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="container">
+    <a href="#" class="nav-logo">EMS<span>Guides</span></a>
+    <ul class="nav-links">
+      <li><a href="#products">Products</a></li>
+      <li><a href="#included">What's Included</a></li>
+      <li><a href="#faq">FAQ</a></li>
+    </ul>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="container">
+    <h1>EMS Reference Guides<br><span>Print & Study</span></h1>
+    <p>Instant-download PDF study guides built for EMT & Paramedic students. Vital signs, drug doses, algorithms — everything you need on one page.</p>
+    <div class="hero-buttons">
+      <a href="#products" class="btn btn-primary btn-lg">Shop Now →</a>
+      <a href="#included" class="btn btn-secondary">See What's Inside</a>
+    </div>
+  </div>
+</section>
+
+<!-- PRODUCTS -->
+<section class="products" id="products">
+  <div class="container">
+    <h2 class="section-title">Choose Your Guide</h2>
+    <p class="section-subtitle">Instant digital download. Print at home or use on any device.</p>
+    <div class="product-grid">
+      
+      <!-- Product 1 -->
+      <div class="product-card">
+        <img src="/images/emt-cards-mockup.png" alt="EMT Quick Reference Cards mockup" style="width:100%;border-radius:12px;margin-bottom:16px;">
+        <div class="product-icon">🩺</div>
+        <h3>EMT Quick Reference Cards</h3>
+        <p style="color:var(--gray-600);font-size:.9rem;">6-page printable PDF with all the critical numbers, assessments, and algorithms you need.</p>
+        <div class="price">$4.99<span> one-time</span></div>
+        <ul class="product-features">
+          <li>Normal Adult & Pediatric Vital Signs</li>
+          <li>Glasgow Coma Scale (GCS) Full Breakdown</li>
+          <li>APGAR Score with Criteria</li>
+          <li>Systematic Patient Assessment (ABCDE)</li>
+          <li>Common EMS Abbreviations</li>
+          <li>Cincinnati Stroke Scale</li>
+          <li>Adult Cardiac Arrest Algorithm</li>
+          <li>START Trauma Triage</li>
+          <li>OPQRST & SAMPLE Mnemonics</li>
+        </ul>
+        <a href="https://buy.stripe.com/dRm00kdtj5Nm7kF1BycbC00" class="btn btn-primary">Buy Now — $4.99</a>
+      </div>
+
+      <!-- Product 2 -->
+      <div class="product-card">
+        <div class="product-icon">💊</div>
+        <h3>Paramedic Pharmacology Cheat Sheet</h3>
+        <p style="color:var(--gray-600);font-size:.9rem;">18 critical EMS medications on 2 pages. Doses, routes, contraindications, side effects.</p>
+        <div class="price">$6.99<span> one-time</span></div>
+        <ul class="product-features">
+          <li>18 Most Critical EMS Medications</li>
+          <li>Drug Class & Indications</li>
+          <li>Adult & Pediatric Doses</li>
+          <li>Routes of Administration</li>
+          <li>Contraindications & Side Effects</li>
+          <li>Color-Coded by Drug Class</li>
+          <li>Clinical Pearls & Exam Notes</li>
+          <li>NREMT-P High-Yield Focus</li>
+        </ul>
+        <a href="https://buy.stripe.com/28E7sM9d34JiawR0xucbC01" class="btn btn-primary">Buy Now — $6.99</a>
+      </div>
+
+      <!-- Product 3: Bundle -->
+      <div class="product-card featured">
+        <div class="product-icon">📚</div>
+        <h3>EMS Study Essentials Bundle</h3>
+        <p style="color:var(--gray-600);font-size:.9rem;">Both guides at a discount. Everything you need for EMS school and clinicals.</p>
+        <div class="price">$12.99<span> save $2</span></div>
+        <ul class="product-features">
+          <li>Everything in EMT Reference Cards</li>
+          <li>Everything in Paramedic Pharmacology</li>
+          <li>8+ Total Pages of Reference Material</li>
+          <li>Print-Ready High-Resolution PDFs</li>
+          <li>Perfect for NREMT & NREMT-P Prep</li>
+          <li>Great Gift for EMS Students</li>
+        </ul>
+        <a href="https://buy.stripe.com/28EcN63SJdfO5cx940cbC02" class="btn btn-primary">Buy Bundle — $12.99</a>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- MORE PRODUCTS -->
+<section class="products" style="background:#fff;padding-top:0;">
+  <div class="container">
+    <h2 class="section-title">More Study Guides</h2>
+    <p class="section-subtitle">Expand your EMS knowledge with these additional references.</p>
+    <div class="product-grid">
+      
+      <!-- Product 4: EKG Guide -->
+      <div class="product-card">
+        <div class="product-icon">📊</div>
+        <h3>EKG/ECG Interpretation Guide</h3>
+        <p style="color:var(--gray-600);font-size:.9rem;">4-page comprehensive EKG reference. Normal values, 8-step interpretation, STEMI localization, critical findings, and common dysrhythmias.</p>
+        <div class="price">$5.99<span> one-time</span></div>
+        <ul class="product-features">
+          <li>Normal EKG Values & Measurements</li>
+          <li>Systematic 8-Step Interpretation</li>
+          <li>12-Lead STEMI Localization</li>
+          <li>Critical EKG Findings & Actions</li>
+          <li>Common Dysrhythmias Quick Reference</li>
+        </ul>
+        <a href="https://buy.stripe.com/6oU00k88Zb7GgVf2FCcbC03" class="btn btn-primary">Buy Now — $5.99</a>
+      </div>
+
+      <!-- Product 5: Medical Terminology -->
+      <div class="product-card">
+        <div class="product-icon">📖</div>
+        <h3>EMS Medical Terminology</h3>
+        <p style="color:var(--gray-600);font-size:.9rem;">3-page medical terminology reference. Prefixes, suffixes, body systems, directional terms, and anatomical positions.</p>
+        <div class="price">$3.99<span> one-time</span></div>
+        <ul class="product-features">
+          <li>18 Common Prefixes with Examples</li>
+          <li>19 Common Suffixes with Examples</li>
+          <li>11 Body Systems Overview</li>
+          <li>Directional & Positional Terms</li>
+          <li>Perfect for EMS School & NREMT</li>
+        </ul>
+        <a href="https://buy.stripe.com/14A3cwexncbK34pdkgcbC04" class="btn btn-primary">Buy Now — $3.99</a>
+      </div>
+
+      <!-- Product 6: Complete Bundle -->
+      <div class="product-card featured">
+        <div class="product-icon">🎓</div>
+        <h3>Complete EMS Study Library</h3>
+        <p style="color:var(--gray-600);font-size:.9rem;">All 5 guides at maximum discount. The ultimate EMS study collection for students and professionals.</p>
+        <div class="price">$19.99<span> save $6</span></div>
+        <ul class="product-features">
+          <li>EMT Quick Reference Cards ($4.99 value)</li>
+          <li>Paramedic Pharmacology ($6.99 value)</li>
+          <li>EKG/ECG Interpretation Guide ($5.99 value)</li>
+          <li>EMS Medical Terminology ($3.99 value)</li>
+          <li>17+ Pages Total Reference Material</li>
+        </ul>
+        <a href="https://buy.stripe.com/5kQ9AUfBr4JidJ35ROcbC05" class="btn btn-primary">Buy Complete Library — $19.99</a>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- WHAT'S INCLUDED -->
+<section class="includes" id="included">
+  <div class="container">
+    <h2 class="section-title">What You Get</h2>
+    <p class="section-subtitle">Professional-quality reference materials designed by EMS educators.</p>
+    <div class="includes-grid">
+      <div class="include-item">
+        <div class="icon">📄</div>
+        <h4>Instant PDF Download</h4>
+        <p>High-resolution, print-ready files delivered immediately after purchase.</p>
+      </div>
+      <div class="include-item">
+        <div class="icon">🖨️</div>
+        <h4>Print Anywhere</h4>
+        <p>Formatted for standard 8.5x11 or folded pocket-card size.</p>
+      </div>
+      <div class="include-item">
+        <div class="icon">📱</div>
+        <h4>Digital Friendly</h4>
+        <p>Use on your phone, tablet, or laptop during study or on shift.</p>
+      </div>
+      <div class="include-item">
+        <div class="icon">🔄</div>
+        <h4>Free Updates</h4>
+        <p>Get updated versions as guidelines change. Just re-download.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SOCIAL PROOF -->
+<section class="proof">
+  <div class="container">
+    <h2>Trusted by EMS Students & Professionals</h2>
+    <div class="proof-stats">
+      <div>
+        <div class="stat-number">6</div>
+        <div class="stat-label">Reference Cards</div>
+      </div>
+      <div>
+        <div class="stat-number">18</div>
+        <div class="stat-label">Drug Profiles</div>
+      </div>
+      <div>
+        <div class="stat-number">100%</div>
+        <div class="stat-label">Digital Delivery</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="faq" id="faq">
+  <div class="container">
+    <h2 class="section-title">Frequently Asked Questions</h2>
+    <div class="faq-list">
+      <div class="faq-item">
+        <h4>How do I receive the files?</h4>
+        <p>Immediately after purchase, you'll be redirected to a download page. The PDF files are also emailed to you.</p>
+      </div>
+      <div class="faq-item">
+        <h4>Can I print these?</h4>
+        <p>Yes! The PDFs are formatted for standard 8.5x11 paper. Print at home, at school, or at a print shop. Laminate them for durability.</p>
+      </div>
+      <div class="faq-item">
+        <h4>Are these suitable for NREMT exam prep?</h4>
+        <p>Absolutely. These guides cover the most commonly tested information on the NREMT and NREMT-P exams.</p>
+      </div>
+      <div class="faq-item">
+        <h4>Do you offer refunds?</h4>
+        <p>Since these are digital products, all sales are final. But if you have any issues, contact us and we'll make it right.</p>
+      </div>
+      <div class="faq-item">
+        <h4>Is this clinical advice?</h4>
+        <p>No. These are educational reference materials only. Always follow your local protocols and medical direction.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="container">
+    <p>EMSGuides — EMS Educational Reference Materials</p>
+    <p style="margin-top:8px;font-size:.8rem;">For educational purposes only. Not clinical advice. Always follow local protocols.</p>
+  </div>
+</footer>
+
+</body>
+</html>

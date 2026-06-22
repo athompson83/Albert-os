@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Thank You! Download Your EMS Study Guides</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',-apple-system,sans-serif;background:linear-gradient(135deg,#111827 0%,#1a1a2e 100%);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;color:#fff}
+.card{background:#fff;color:#111827;border-radius:20px;padding:48px;max-width:600px;width:100%;text-align:center}
+.checkmark{width:80px;height:80px;background:#059669;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 24px;font-size:2.5rem;color:#fff}
+h1{font-size:1.75rem;font-weight:800;margin-bottom:12px}
+.subtitle{color:#4B5563;margin-bottom:32px;font-size:1.05rem}
+.downloads{display:flex;flex-direction:column;gap:16px;margin-bottom:32px}
+.dl-btn{display:flex;align-items:center;gap:12px;padding:18px 24px;background:#F3F4F6;border-radius:12px;text-decoration:none;color:#111827;font-weight:600;transition:all .2s;border:2px solid transparent;text-align:left}
+.dl-btn:hover{border-color:#DC2626;background:#FEE2E2}
+.dl-icon{font-size:1.5rem}
+.dl-info{flex:1}
+.dl-name{font-size:.95rem;margin-bottom:2px}
+.dl-size{font-size:.8rem;color:#6B7280}
+.footer{font-size:.85rem;color:#6B7280;line-height:1.5}
+.footer a{color:#DC2626}
+</style>
+</head>
+<body>
+<div class="card">
+<div class="checkmark">✓</div>
+<h1>Thank You for Your Purchase!</h1>
+<p class="subtitle">Your EMS study guides are ready for download. Save them to your device or print them out.</p>
+
+<div class="downloads" id="downloads">
+<!-- Filled by JS based on URL param -->
+</div>
+
+<script>
+// Show appropriate download based on what was purchased
+const params = new URLSearchParams(window.location.search);
+const product = params.get('product') || 'bundle';
+
+const downloads = {
+  emt_cards: [
+    {name: 'EMT Quick Reference Cards.pdf', size: '9 KB', icon: '🩺', url: '/pdfs/EMT_Quick_Reference_Cards.pdf'}
+  ],
+  paramedic_pharm: [
+    {name: 'Paramedic Pharmacology Cheat Sheet.pdf', size: '5 KB', icon: '💊', url: '/pdfs/Paramedic_Pharmacology_Cheat_Sheet.pdf'}
+  ],
+  bundle: [
+    {name: 'EMT Quick Reference Cards.pdf', size: '9 KB', icon: '🩺', url: '/pdfs/EMT_Quick_Reference_Cards.pdf'},
+    {name: 'Paramedic Pharmacology Cheat Sheet.pdf', size: '5 KB', icon: '💊', url: '/pdfs/Paramedic_Pharmacology_Cheat_Sheet.pdf'}
+  ],
+  ekg_guide: [
+    {name: 'EKG Interpretation Guide.pdf', size: '7 KB', icon: '📊', url: '/pdfs/EKG_Interpretation_Guide.pdf'}
+  ],
+  med_terms: [
+    {name: 'EMS Medical Terminology.pdf', size: '6 KB', icon: '📖', url: '/pdfs/EMS_Medical_Terminology.pdf'}
+  ],
+  complete_library: [
+    {name: 'EMT Quick Reference Cards.pdf', size: '9 KB', icon: '🩺', url: '/pdfs/EMT_Quick_Reference_Cards.pdf'},
+    {name: 'Paramedic Pharmacology Cheat Sheet.pdf', size: '5 KB', icon: '💊', url: '/pdfs/Paramedic_Pharmacology_Cheat_Sheet.pdf'},
+    {name: 'EKG Interpretation Guide.pdf', size: '7 KB', icon: '📊', url: '/pdfs/EKG_Interpretation_Guide.pdf'},
+    {name: 'EMS Medical Terminology.pdf', size: '6 KB', icon: '📖', url: '/pdfs/EMS_Medical_Terminology.pdf'}
+  ]
+};
+
+const container = document.getElementById('downloads');
+const items = downloads[product] || downloads.bundle;
+items.forEach(item => {
+  const a = document.createElement('a');
+  a.href = item.url;
+  a.className = 'dl-btn';
+  a.download = item.name;
+  a.innerHTML = `<span class="dl-icon">${item.icon}</span><div class="dl-info"><div class="dl-name">${item.name}</div><div class="dl-size">${item.size} · PDF</div></div><span>↓</span>`;
+  container.appendChild(a);
+});
+
+// Auto-trigger downloads for bundle
+if (product === 'bundle') {
+  setTimeout(() => {
+    items.forEach(item => {
+      const a = document.createElement('a');
+      a.href = item.url;
+      a.download = item.name;
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    });
+  }, 1500);
+}
+</script>
+
+<div class="footer">
+<p><strong>Print tips:</strong> Use standard 8.5x11 paper. Laminate for durability. Perfect for your bag or clipboard.</p>
+<p style="margin-top:12px;">Questions? Contact us at <a href="mailto:support@emtguide.store">support@emtguide.store</a></p>
+<p style="margin-top:8px;font-size:.75rem;">For educational purposes only. Not clinical advice. Always follow local protocols.</p>
+</div>
+</div>
+</body>
+</html>
