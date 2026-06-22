@@ -1,90 +1,80 @@
-# Albert OS — Progress Report
+# Hermes — Daily Operations Report
 **Date:** 2026-06-22
-**Time:** 3:00 PM
-**Agent:** Albert (CEO)
-**Status:** 🟢 Active — Revenue Generation Mode
+**Time:** 4:00 PM
+**Mode:** Autonomous Revenue Operator
 
 ---
 
-## Revenue Generation Progress
+## Strategic Reset
 
-### ✅ COMPLETED: NREMT Practice Exams (Top Priority)
+Received new operational framework: **Zero-budget revenue generation through B2B services.**
 
-Created 3 full-length NREMT practice exams with 120 questions each:
+Key shift: From building products for EMS students → selling AI automation services to local businesses with high-value leads.
 
-| Product | Price | Payment Link |
+**Why this is better:**
+- EMS digital products: $5-20/sale, need traffic, slow to scale
+- B2B AI automation: $500-$10,000+/client, direct outreach, immediate revenue
+- Local businesses already spend on leads — we just help them convert better
+
+---
+
+## Three Active Experiments
+
+### Experiment 1: AI Lead Recovery for Home Services (ACTIVE)
+**Target:** Roofing, HVAC, plumbing, water damage businesses in Fort Myers
+**Offer:** Missed-call text-back + instant form response + review automation
+**Revenue:** $197/month or $50/qualified appointment
+**Status:** 
+- ✅ Offer created
+- ✅ Landing page built
+- ✅ Outreach email drafted
+- ⏳ Need 50 prospects with weak lead capture
+- ⏳ Need approval to send outreach
+
+**Assets created:**
+- Offer page: /store/lead-recovery-offer.html
+- Outreach plan: /store/experiment1_plan.md
+- Prospect list: 12 identified (need 50)
+
+### Experiment 2: Government Contract Opportunity Briefs (PENDING)
+**Target:** Small contractors, IT firms, cleaning companies
+**Offer:** Weekly curated contract opportunities with go/no-go summaries
+**Revenue:** $99/month subscription or $500-$2,500 capture packet
+**Status:** Not started yet
+
+### Experiment 3: Accounting Firm AI Advisory Workflow (PENDING)
+**Target:** Small accounting/bookkeeping firms
+**Offer:** Client intake, document collection, monthly advisory reports
+**Revenue:** Setup fee + monthly support
+**Status:** Not started yet
+
+---
+
+## New Credentials
+- Mailchimp API key: Provided but invalid (401 error) — needs new key from Adam
+
+---
+
+## Blockers Requiring Adam
+1. **Mailchimp key** — Current key is invalid. Need new one for email automation.
+2. **Outreach approval** — Ready to send 50 personalized emails to home service businesses. Need approval to proceed.
+3. **Phone number** — For the lead recovery system, need a Twilio or similar phone number (free trial available).
+
+---
+
+## Revenue Projections
+| Experiment | Conservative | Optimistic |
 |---|---|---|
-| NREMT Practice Exam 1 | $7.99 | https://buy.stripe.com/5kQ7sMblb6Rq7kFbc8cbC09 |
-| NREMT Practice Exam 2 | $7.99 | https://buy.stripe.com/4gM9AUexn0t2awRgwscbC08 |
-| NREMT Practice Exam 3 | $7.99 | https://buy.stripe.com/aFa28sgFv8Zy34p0xucbC07 |
-| NREMT Bundle (All 3) | $19.99 | https://buy.stripe.com/9B66oIfBrcbK34peokcbC06 |
-
-**Exam Content:**
-- 120 questions per exam across 6 sections: Airway/Breathing, Cardiovascular, Medical Emergencies, Trauma, OB/Pediatrics, Operations
-- Each question includes detailed answer explanations
-- 360 unique questions across all 3 exams
-- PDF format with instant download
-
-**Market Validation:**
-- Etsy: NREMT practice tests sell for $12-15 with 44+ reviews
-- Amazon: NREMT prep books sell for $15-30
-- ~100,000 NREMT test-takers annually
-- Proven demand, low competition for digital downloads
-
-**Revenue Potential:**
-- Conservative: 5 sales/day × $19.99 = $100/day = $3,000/month
-- Optimistic: 20 sales/day × $19.99 = $400/day = $12,000/month
+| Exp 1: Lead Recovery | 3 clients × $197 = $591/mo | 10 clients × $197 = $1,970/mo |
+| Exp 2: Gov Contracts | 5 subs × $99 = $495/mo | 20 subs × $99 = $1,980/mo |
+| Exp 3: Accounting | 2 clients × $500 = $1,000/mo | 5 clients × $500 = $2,500/mo |
+| **Combined** | **$2,086/mo** | **$6,450/mo** |
 
 ---
 
-### ✅ COMPLETED: Infrastructure
-
-- EMS Store: https://emt-guide-xi.vercel.app (10 products total)
-- Gumroad: https://paramedic101.gumroad.com
-- Albert OS Dashboard: https://albert-os.vercel.app
-- Chat: Working (connected to Hermes gateway)
-- GitHub: https://github.com/athompson83/Albert-os
-
----
-
-### ✅ COMPLETED: Skills & Research
-
-**Skills Installed (17 total):**
-- autonomous-operations, niche-research-zero-cost, youtube-full, gemini-api, claudeception, superpowers, humanizer, seo-geo (20 skills), taste-skill, playwright-skill, link-curator, openjarvis-chat
-
-**Repos Studied:**
-- blader/Claudeception — Self-improvement skill extraction
-- dodo-reach/hermes-link-curator — Link archiving dashboard
-- ZeroPointRepo/awesome-hermes-skills — 163 skills reference
-- obra/superpowers — Subagent-driven development
-- kepano/obsidian-skills, kepano/defuddle — Obsidian + web extraction
-- Leonxlnx/taste-skill — Anti-slop frontend
-- aaron-he-zhu/seo-geo-claude-skills — 20 SEO/GEO skills
-- blader/humanizer — AI text humanizer
-- testdino-hq/playwright-skill — Browser automation
-- open-jarvis/OpenJarvis — Local-first AI agent framework
-
-**Key Learnings from OpenJarvis:**
-- WebSocket chat with streaming responses
-- FastAPI server with channel abstraction
-- Skills system compatible with agentskills.io spec
-- Local-first architecture with cloud fallback
-- 30+ messaging channel integrations
-
----
-
-## Next Steps
-
-1. **Create Gumroad listings** for NREMT exams
-2. **Update store landing page** with NREMT products
-3. **Create email lead magnet** (free sample questions) via Beehiiv
-4. **Apply to Amazon Associates** for affiliate revenue
-5. **Create SEO content** targeting "NREMT practice test" keywords
-6. **Repurpose YouTube Shorts scripts** into social posts
-
----
-
-## Budget
-- **Total spent:** $0
-- **All tools:** Free tier only
-- **Revenue to date:** $0 (products just launched)
+## Next 24 Hours
+1. Build prospect list to 50 businesses
+2. Create personalized outreach for each
+3. Get approval to send first batch
+4. Start Experiment 2 research
+5. Create sample government contract brief
