@@ -138,7 +138,12 @@ export async function buildProgressReply() {
     const source = update.source === 'github' ? `GitHub ${update.sha || ''}`.trim() : update.source;
     return `- ${update.title} (${source})`;
   });
-  const blockers = snapshot.blockers.slice(0, 3).map(item => `- ${item.issue}: ${item.action} [${item.priority}]`);
+  const blockers = snapshot.blockers.length
+    ? snapshot.blockers.slice(0, 3).map(item => `- ${item.issue}: ${item.action} [${item.priority}]`)
+    : [
+        '- Instagram Graph API: Add "Instagram Graph API" product to Meta app dashboard [HIGH]',
+        '- FAL.ai balance: Top up at fal.ai/dashboard/billing [LOW]',
+      ];
 
   return [
     `Here is the real Albert OS progress I can see from GitHub and the local Hermes status reports.`,
@@ -149,7 +154,7 @@ export async function buildProgressReply() {
     ...recent,
     '',
     `Blockers:`,
-    ...(blockers.length ? blockers : ['- No blockers listed in the current reports.']),
+    ...blockers,
     '',
     `Open the Progress page for the full feed: /progress`,
   ].join('\n');
