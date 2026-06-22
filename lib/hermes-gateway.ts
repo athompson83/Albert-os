@@ -198,7 +198,7 @@ function initialProducts(): HermesProduct[] {
       description: 'Printable EMS quick-reference cards for digital product sales.',
       status: 'ready',
       type: 'pdf',
-      downloadUrl: '/store/pdfs/EMT_Quick_Reference_Cards.pdf',
+      downloadUrl: '/api/products/download/prod_emt_cards',
       price: '$9',
       createdAt: now,
       updatedAt: now,
@@ -210,7 +210,7 @@ function initialProducts(): HermesProduct[] {
       description: 'Medication reference PDF prepared for the EMS digital product catalog.',
       status: 'ready',
       type: 'pdf',
-      downloadUrl: '/store/pdfs/Paramedic_Pharmacology_Cheat_Sheet.pdf',
+      downloadUrl: '/api/products/download/prod_paramedic_pharm',
       price: '$12',
       createdAt: now,
       updatedAt: now,
@@ -305,6 +305,15 @@ export function getHermesState(): HermesState {
     updatedAt: state.lastUpdatedAt,
     ...task,
   }));
+  state.products = state.products.map(product => {
+    if (product.id === 'prod_emt_cards') {
+      return { ...product, downloadUrl: '/api/products/download/prod_emt_cards' };
+    }
+    if (product.id === 'prod_paramedic_pharm') {
+      return { ...product, downloadUrl: '/api/products/download/prod_paramedic_pharm' };
+    }
+    return product;
+  });
   for (const credentialTask of initialCredentialTasks()) {
     if (!state.tasks.some(task => task.id === credentialTask.id)) {
       state.tasks.unshift(credentialTask);
