@@ -34,6 +34,7 @@ export default function ProductsPage() {
   const [comment, setComment] = useState('');
   const [saving, setSaving] = useState(false);
   const [filter, setFilter] = useState<'active' | ProductStatus>('active');
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
   async function load() {
     setLoading(true);
@@ -68,6 +69,27 @@ export default function ProductsPage() {
       }
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function downloadProduct(product: Product) {
+    if (!product.downloadUrl) return;
+    setDownloadingId(product.id);
+    try {
+      const res = await fetch(product.downloadUrl);
+      if (!res.ok) throw new Error(`Download failed: HTTP ${res.status}`);
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      const filename = `${product.title.replace(/[^a-z0-9]+/gi, '_').replace(/^_|_$/g, '') || 'product'}.pdf`;
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } finally {
+      setDownloadingId(null);
     }
   }
 
@@ -111,7 +133,11 @@ export default function ProductsPage() {
               </div>
               <p style={{ margin: 0, color: 'var(--text)', fontSize: 13, lineHeight: 1.45 }}>{product.description}</p>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 'auto' }}>
-                {product.downloadUrl && <a href={product.downloadUrl} download style={linkButton('#10b981')}>Download</a>}
+                {product.downloadUrl && (
+                  <button onClick={() => downloadProduct(product)} disabled={downloadingId === product.id} style={buttonStyle('#10b981')}>
+                    {downloadingId === product.id ? 'Downloading...' : 'Download'}
+                  </button>
+                )}
                 {product.vercelUrl && <a href={product.vercelUrl} target="_blank" rel="noreferrer" style={linkButton('#38bdf8')}>Open site</a>}
                 <button onClick={() => { setSelected(product); setComment(''); }} style={buttonStyle('#6366f1')}>Review</button>
               </div>
