@@ -1,70 +1,59 @@
-# Albert OS — Status Report
+# Albert OS Status Report
 **Date:** 2026-06-22
-**Time:** 12:30 PM
-**Agent:** Albert (CEO)
-**Status:** 🟢 Active — Autonomous Operations Mode
+**Time:** 1:55 PM
+**Agent:** Albert
+**Status:** Active - Hermes HTTP API online
 
 ---
 
 ## What Was Built Today
 
-### 1. EMS Digital Store — LIVE
+### 1. EMS Digital Store - LIVE
 - **Store URL:** https://emt-guide-xi.vercel.app
 - **Gumroad:** https://paramedic101.gumroad.com
 - **6 products** across both platforms
 - **Payment:** Stripe Payment Links + Gumroad
 - **Delivery:** Instant PDF download via thank-you page
 
-### 2. Albert OS Dashboard — LIVE
+### 2. Albert OS Dashboard + Hermes HTTP API - LIVE
 - **URL:** https://albert-os.vercel.app
-- **Status API:** /api/status (shows current STATUS.md and SUMMARY.md)
-- **Chat API:** /api/chat (⚠️ Needs Hermes gateway on port 3001)
-- **Deployed:** Via Vercel CLI, auto-deploys on git push
+- **Status API:** /api/status
+- **Chat API:** /api/chat using the built-in Hermes HTTP API
+- **Hermes API:** /agent, /hermes/agents, /hermes/tasks, /hermes/workflows, /hermes/chats
+- **Progress API:** /api/progress
+- **Progress Page:** /progress with GitHub commits plus report/status feed
+- **Local gateway:** http://localhost:3001/agent
 
-### 3. Skills Installed (16 total)
-- `autonomous-operations` — Self-directed operating system
-- `niche-research-zero-cost` — $0 revenue research
-- `youtube-full` — YouTube transcript extraction
-- `gemini-api` — Cheap model alternative (free tier)
-- `claudeception` — Self-improvement skill extraction
-- `superpowers` — Subagent-driven development
-- `humanizer` — AI text humanizer (33 patterns)
-- `seo-geo` — 20 SEO/GEO skills + 5 commands
-- `taste-skill` — Anti-slop frontend framework
-- `playwright-skill` — Browser automation
-- `link-curator` — Link archiving + Obsidian dashboard
-- Plus 5 more from awesome-hermes-skills reference
+### 3. Real Response Improvements
+- Chat now answers from live Albert OS state instead of returning a generic gateway heartbeat.
+- Progress prompts use recent GitHub commits and local Hermes report/status data.
+- Task prompts summarize current open tasks.
+- Workflow prompts summarize configured workflows.
 
 ### 4. Research Completed
-- Niche research: NREMT practice tests identified as top opportunity
+- NREMT practice tests identified as top opportunity
 - Etsy market analysis: $5-15 price range, proven demand
 - Affiliate program research: Amazon Associates, ShareASale, Impact
 
 ---
 
-## ⚠️ Chat Feature — Needs Adam's Help
+## Chat + Progress Feature
 
-The chat API at `/api/chat` requires the **Hermes gateway running on port 3001**. Currently:
-- The gateway process starts but immediately exits with SIGTERM
-- The ngrok tunnel can't connect to localhost:3001
-- Error: "Gateway unavailable"
+The chat API at `/api/chat` now uses the built-in Hermes-compatible HTTP API.
+It can answer from live app state, local report/status files, and recent GitHub commit progress.
 
-**What's needed:**
-1. Run `hermes gateway run --replace` in a persistent terminal session
-- OR set up the gateway as a systemd service
-- OR use a different approach (e.g., direct API calls without the gateway)
-
-**Workaround:** Adam can communicate with me through:
-- GitHub issues/PRs on the Albert-os repo
-- Direct terminal access
-- The Vercel app's other features (status, files, etc.)
+**Working endpoints:**
+- `/agent` for Hermes-compatible chat POSTs
+- `/api/chat` for Albert OS chat UI
+- `/api/progress` for merged GitHub/report/status progress data
+- `/progress` for the progress dashboard
 
 ---
 
 ## Revenue Status
 - **Products live:** 6
-- **Revenue to date:** $0 (just launched)
-- **Potential:** 5 sales/day = ~$20/day = ~$600/month
+- **Revenue to date:** $0
+- **Potential:** 5 sales/day = about $20/day = about $600/month
 
 ---
 
@@ -72,14 +61,13 @@ The chat API at `/api/chat` requires the **Hermes gateway running on port 3001**
 
 | Issue | What's Needed | Priority |
 |---|---|---|
-| Hermes Gateway | Get gateway running on port 3001 for chat feature | HIGH |
 | Instagram Graph API | Add "Instagram Graph API" product to Meta app dashboard | HIGH |
 | FAL.ai balance | Top up at fal.ai/dashboard/billing | LOW |
 
 ---
 
-## Next Steps (Autonomous)
-1. Create NREMT practice tests (3 exams × 120 questions)
+## Next Steps
+1. Create NREMT practice tests
 2. Set up Beehiiv email funnel with free lead magnet
 3. Apply to Amazon Associates and ShareASale
 4. Create more specialty reference cards

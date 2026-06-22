@@ -1,35 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getHermesState, upsertWorkflow } from '@/lib/hermes-gateway';
 
-const GW = (process.env.ALBERT_GATEWAY_URL || 'https://legwork-brisket-anyplace.ngrok-free.dev').replace(/\/+$/, '');
-const H = { 'ngrok-skip-browser-warning': 'true', 'Content-Type': 'application/json' };
+export const runtime = 'nodejs';
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  try {
-    const r = await fetch(GW + '/workflows/' + id, { headers: H, signal: AbortSignal.timeout(10000) });
-    return NextResponse.json(await r.json());
-  } catch (e) {
-    return NextResponse.json({ error: String(e) }, { status: 500 });
-  }
+  const workflow = getHermesState().workflows.find(item => item.id === id);
+  return workflow ? NextResponse.json({ workflow }) : NextResponse.json({ error: 'Workflow not found' }, { status: 404 });
 }
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  try {
-    const body = await req.json();
-    const r = await fetch(GW + '/workflows/' + id, { method: 'PUT', headers: H, body: JSON.stringify(body), signal: AbortSignal.timeout(10000) });
-    return NextResponse.json(await r.json());
-  } catch (e) {
-    return NextResponse.json({ error: String(e) }, { status: 500 });
-  }
+  const body = await req.json().catch(() => ({}));
+  const workflow = upsertWorkflow({ ...body, id });
+  return NextResponse.json({ workflow });
 }
 
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  try {
-    const r = await fetch(GW + '/workflows/' + id, { method: 'DELETE', headers: H, signal: AbortSignal.timeout(10000) });
-    return NextResponse.json(await r.json());
-  } catch (e) {
-    return NextResponse.json({ error: String(e) }, { status: 500 });
-  }
+  const state = getHermesState();
+  state.workflows = state.workflows.filter(item => item.id !== id);
+  return NextResponse.json({ ok: true, workflows: state.workflows });
 }

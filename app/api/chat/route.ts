@@ -1,21 +1,37 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createGatewayReply, recordChat } from '@/lib/hermes-gateway';
 
 export const runtime = 'nodejs';
 export const maxDuration = 120;
 
-export async function POST(req: NextRequest) {
-  const { message } = await req.json();
+type ChatAttachment = {
+  name: string;
+  url: string;
+  type: string;
+  size: number;
+};
 
-  // The Hermes gateway doesn't expose a local HTTP API.
-  // Chat works through messaging platforms (Slack, Discord, etc.)
-  // For web chat, we need to either:
-  // 1. Use the Hermes CLI in a subprocess (requires TTY)
-  // 2. Set up a separate HTTP API server
-  // 3. Use the messaging platform webhooks
+type ChatRequest = {
+  message?: string;
+  agentId?: string;
+  attachments?: ChatAttachment[];
+  project?: string;
+};
+
+export async function POST(req: NextRequest) {
+  const body = (await req.json().catch(() => ({}))) as ChatRequest;
+  const message = body.message?.trim();
+
+  if (!message) {
+    return NextResponse.json({ reply: 'Message is required.', error: true }, { status: 400 });
+  }
+
+  const reply = await createGatewayReply(message, body.agentId || 'albert');
+  const chat = recordChat(message, reply, body.project || 'General', body.attachments);
 
   return NextResponse.json({
-    reply: `I received your message: "${message}". The web chat feature requires the Hermes gateway HTTP API, which is not currently available. You can reach me through Slack (#hermes) or by talking to me directly in the terminal. I'm working autonomously and pushing updates to GitHub: https://github.com/athompson83/Albert-os`,
-    error: true,
-    needsGateway: true,
+    reply,
+    project: chat.project,
+    gateway: 'builtin-hermes-http-api',
   });
 }

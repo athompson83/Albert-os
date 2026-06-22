@@ -70,11 +70,16 @@ export default function Dashboard() {
     update();
     const t = setInterval(update, 30000);
     // Load dismissed from localStorage
-    try {
-      const d = JSON.parse(localStorage.getItem('dismissed-pending') || '[]');
-      setDismissed(d);
-    } catch {}
-    return () => clearInterval(t);
+    const loadDismissed = window.setTimeout(() => {
+      try {
+        const d = JSON.parse(localStorage.getItem('dismissed-pending') || '[]');
+        setDismissed(d);
+      } catch {}
+    }, 0);
+    return () => {
+      clearInterval(t);
+      clearTimeout(loadDismissed);
+    };
   }, []);
 
   useEffect(() => {

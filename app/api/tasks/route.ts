@@ -1,32 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getHermesState, upsertTask } from '@/lib/hermes-gateway';
 
-const GW = (process.env.ALBERT_GATEWAY_URL || 'https://legwork-brisket-anyplace.ngrok-free.dev').replace(/\/+$/, '');
-const H = { 'ngrok-skip-browser-warning': 'true', 'Content-Type': 'application/json' };
+export const runtime = 'nodejs';
 
 export async function GET() {
-  try {
-    const res = await fetch(`${GW}/tasks`, { headers: H, signal: AbortSignal.timeout(6000) });
-    const data = await res.json();
-    return NextResponse.json(data);
-  } catch {
-    return NextResponse.json({ tasks: [], error: 'Could not reach proxy' });
-  }
+  return NextResponse.json({ tasks: getHermesState().tasks });
 }
 
 export async function POST(req: NextRequest) {
-  const body = await req.json();
-  const res = await fetch(`${GW}/tasks`, { method: 'POST', headers: H, body: JSON.stringify(body), signal: AbortSignal.timeout(6000) });
-  return NextResponse.json(await res.json());
+  const body = await req.json().catch(() => ({}));
+  if (body._action === 'sync') {
+    return NextResponse.json({ ok: true, tasks: getHermesState().tasks });
+  }
+  const task = upsertTask(body);
+  return NextResponse.json({ task, tasks: getHermesState().tasks }, { status: 201 });
 }
 
 export async function PATCH(req: NextRequest) {
-  const body = await req.json();
-  const res = await fetch(`${GW}/tasks`, { method: 'PATCH', headers: H, body: JSON.stringify(body), signal: AbortSignal.timeout(6000) });
-  return NextResponse.json(await res.json());
+  const body = await req.json().catch(() => ({}));
+  const task = upsertTask(body);
+  return NextResponse.json({ task, tasks: getHermesState().tasks });
 }
 
 export async function DELETE(req: NextRequest) {
-  const body = await req.json();
-  const res = await fetch(`${GW}/tasks`, { method: 'DELETE', headers: H, body: JSON.stringify(body), signal: AbortSignal.timeout(6000) });
-  return NextResponse.json(await res.json());
+  const body = await req.json().catch(() => ({}));
+  const state = getHermesState();
+  state.tasks = state.tasks.map(task => (task.id === body.id ? { ...task, archivedAt: new Date().toISOString() } : task));
+  return NextResponse.json({ ok: true, tasks: state.tasks });
 }

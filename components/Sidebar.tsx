@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import {
   LayoutDashboard, MessageSquare, FolderKanban,
   Users, GitBranch, CheckSquare, Plug, FileText, Terminal, ScrollText,
-  Newspaper, Menu, X, Scissors, Monitor, BookOpen
+  Newspaper, Menu, X, Scissors, Monitor, BookOpen, Activity
 } from 'lucide-react';
 
 const nav = [
@@ -16,6 +16,7 @@ const nav = [
   { href: '/content', label: 'Content', icon: BookOpen },
   { href: '/agents', label: 'Agents', icon: Users },
   { href: '/workflows', label: 'Workflows', icon: GitBranch },
+  { href: '/progress', label: 'Progress', icon: Activity },
   { href: '/newsletter', label: 'Newsletter', icon: Newspaper },
   { href: '/projects', label: 'Projects', icon: FolderKanban },
   { href: '/tasks', label: 'Tasks', icon: CheckSquare },

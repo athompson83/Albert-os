@@ -46,9 +46,14 @@ export default function NotificationBell() {
 
   // Poll every 30s
   useEffect(() => {
-    fetchNotifs();
+    const initial = window.setTimeout(() => {
+      fetchNotifs();
+    }, 0);
     const t = setInterval(fetchNotifs, 30000);
-    return () => clearInterval(t);
+    return () => {
+      clearTimeout(initial);
+      clearInterval(t);
+    };
   }, [fetchNotifs]);
 
   // Close on outside click

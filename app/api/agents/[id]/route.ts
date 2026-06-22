@@ -1,34 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getHermesState, upsertAgent } from '@/lib/hermes-gateway';
 
-const GATEWAY_URL = (process.env.ALBERT_GATEWAY_URL || 'https://legwork-brisket-anyplace.ngrok-free.dev').replace(/\/+$/, '');
-const NGROK_HEADER = { 'ngrok-skip-browser-warning': 'true' };
+export const runtime = 'nodejs';
+
+export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const agent = getHermesState().agents.find(item => item.id === id);
+  return agent ? NextResponse.json({ agent }) : NextResponse.json({ error: 'Agent not found' }, { status: 404 });
+}
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  try {
-    const { id } = await Promise.resolve(params);
-    const body = await req.json();
-    const res = await fetch(`${GATEWAY_URL}/agents/${id}`, {
-      method: 'PUT',
-      headers: { ...NGROK_HEADER, 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    });
-    const data = await res.json();
-    return NextResponse.json(data, { status: res.status });
-  } catch (err) {
-    return NextResponse.json({ error: String(err) }, { status: 500 });
-  }
+  const { id } = await params;
+  const body = await req.json().catch(() => ({}));
+  const agent = upsertAgent({ ...body, id });
+  return NextResponse.json({ agent });
+}
+
+export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
+  return PUT(req, ctx);
 }
 
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  try {
-    const { id } = await Promise.resolve(params);
-    const res = await fetch(`${GATEWAY_URL}/agents/${id}`, {
-      method: 'DELETE',
-      headers: NGROK_HEADER,
-    });
-    const data = await res.json();
-    return NextResponse.json(data, { status: res.status });
-  } catch (err) {
-    return NextResponse.json({ error: String(err) }, { status: 500 });
-  }
+  const { id } = await params;
+  const state = getHermesState();
+  const before = state.agents.length;
+  state.agents = state.agents.filter(item => item.id !== id || item.isDefault);
+  return NextResponse.json({ ok: state.agents.length !== before });
 }

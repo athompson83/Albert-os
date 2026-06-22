@@ -253,7 +253,12 @@ function PipelineMonitor() {
     setLoading(false);
   }, []);
 
-  useEffect(() => { refresh(); }, [refresh]);
+  useEffect(() => {
+    const t = window.setTimeout(() => {
+      refresh();
+    }, 0);
+    return () => clearTimeout(t);
+  }, [refresh]);
 
   const submitVideo = async () => {
     if (!newUrl.trim()) return;
@@ -431,8 +436,11 @@ export default function ClippingPage() {
   const [showPipeline, setShowPipeline] = useState(false);
 
   useEffect(() => {
-    setActions(loadActions());
-    setHydrated(true);
+    const t = window.setTimeout(() => {
+      setActions(loadActions());
+      setHydrated(true);
+    }, 0);
+    return () => clearTimeout(t);
   }, []);
 
   useEffect(() => {

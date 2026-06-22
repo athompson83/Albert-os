@@ -1,20 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { upsertAgent } from '@/lib/hermes-gateway';
 
-const GATEWAY_URL = (process.env.ALBERT_GATEWAY_URL || 'https://legwork-brisket-anyplace.ngrok-free.dev').replace(/\/+$/, '');
-const NGROK_HEADER = { 'ngrok-skip-browser-warning': 'true' };
+export const runtime = 'nodejs';
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  try {
-    const { id } = await params;
-    const form = await req.formData();
-    const res = await fetch(`${GATEWAY_URL}/agents/${id}/avatar`, {
-      method: 'POST',
-      headers: NGROK_HEADER,
-      body: form,
-    });
-    const data = await res.json();
-    return NextResponse.json(data, { status: res.status });
-  } catch (err) {
-    return NextResponse.json({ error: String(err) }, { status: 500 });
+  const { id } = await params;
+  let avatar = `/avatars/${id}.png`;
+  const contentType = req.headers.get('content-type') || '';
+
+  if (contentType.includes('application/json')) {
+    const body = await req.json().catch(() => ({}));
+    avatar = String(body.avatar || body.url || avatar);
   }
+
+  const agent = upsertAgent({ id, avatar });
+  return NextResponse.json({ agent, avatar });
 }

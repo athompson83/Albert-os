@@ -1,4 +1,4 @@
-import { auth } from '@/auth';
+import { auth, isAuthConfigured } from '@/auth';
 import { NextResponse } from 'next/server';
 
 export default auth((req) => {
@@ -24,6 +24,10 @@ export default auth((req) => {
   }
 
   // Not logged in — redirect to login
+  if (!isAuthConfigured) {
+    return NextResponse.next();
+  }
+
   if (!req.auth) {
     const loginUrl = new URL('/login', req.url);
     loginUrl.searchParams.set('callbackUrl', req.url);
