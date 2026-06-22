@@ -19,9 +19,13 @@ type ProgressSnapshot = {
   repo: string;
   githubUrl: string;
   latest?: ProgressUpdate;
-  counts: { github: number; reports: number; status: number; blockers: number };
+  counts: { github: number; reports: number; status: number; blockers: number; capabilities?: number; readyCapabilities?: number };
   blockers: Array<{ issue: string; action: string; priority: string }>;
   updates: ProgressUpdate[];
+  capabilities?: {
+    summary: { total: number; ready: number; needsSetup: number; blocked: number };
+    readiness: Array<{ id: string; name: string; status: 'ready' | 'needs_setup' | 'blocked'; mode: string; agentId: string; endpoint?: string; nextAction?: string }>;
+  };
 };
 
 const sourceColor: Record<ProgressUpdate['source'], string> = {
@@ -103,6 +107,36 @@ export default function ProgressPage() {
             </div>
           ))}
         </div>
+
+        {snapshot?.capabilities && (
+          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: 18, marginBottom: 18 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 12 }}>
+              <div>
+                <h3 style={{ margin: 0, color: '#fff', fontSize: 15 }}>Hermes Capability Readiness</h3>
+                <div style={{ color: 'var(--text-muted)', fontSize: 12, marginTop: 3 }}>
+                  {snapshot.capabilities.summary.ready} of {snapshot.capabilities.summary.total} capabilities ready.
+                </div>
+              </div>
+              <a href="/capabilities" style={{ color: '#a5b4fc', fontSize: 13, textDecoration: 'none' }}>Open catalog</a>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 8 }}>
+              {snapshot.capabilities.readiness.slice(0, 6).map(capability => {
+                const color = capability.status === 'ready' ? '#10b981' : capability.status === 'blocked' ? '#ef4444' : '#f59e0b';
+                return (
+                  <div key={capability.id} style={{ border: '1px solid var(--border)', borderRadius: 7, padding: 10, background: 'var(--surface-2)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ width: 7, height: 7, borderRadius: 999, background: color, flexShrink: 0 }} />
+                      <span style={{ color: '#fff', fontSize: 13, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{capability.name}</span>
+                    </div>
+                    <div style={{ color: 'var(--text-muted)', fontSize: 11, marginTop: 5 }}>
+                      {capability.agentId} / {capability.mode} / {capability.status.replace('_', ' ')}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {snapshot?.latest && (
           <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: 18, marginBottom: 18 }}>

@@ -1,5 +1,11 @@
 import { mockTasks } from '@/lib/mock-data';
 import { buildProgressReply } from '@/lib/progress';
+import {
+  buildCapabilitiesReply,
+  buildCapabilityTrace,
+  findCapabilityForMessage,
+  getCapabilities,
+} from '@/lib/capabilities';
 
 export type HermesAgent = {
   id: string;
@@ -152,6 +158,16 @@ export async function createGatewayReply(message: string, agentId = 'albert') {
   const normalized = message.toLowerCase();
 
   if (
+    normalized.includes('capability') ||
+    normalized.includes('capabilities') ||
+    normalized.includes('what can you do') ||
+    normalized.includes('skills') ||
+    normalized.includes('tools')
+  ) {
+    return buildCapabilitiesReply();
+  }
+
+  if (
     normalized.includes('progress') ||
     normalized.includes('github') ||
     normalized.includes('report') ||
@@ -163,9 +179,10 @@ export async function createGatewayReply(message: string, agentId = 'albert') {
 
   if (normalized.includes('status') || normalized.includes('blocker')) {
     const openTasks = state.tasks.filter(task => !task.archivedAt && task.status !== 'done').length;
+    const readyCapabilities = getCapabilities().filter(capability => capability.status === 'ready').length;
     return [
       `${agent.name} is online and connected through the Hermes HTTP API.`,
-      `Current workspace: ${state.agents.length} agents, ${openTasks} open tasks, ${state.workflows.length} workflow.`,
+      `Current workspace: ${state.agents.length} agents, ${openTasks} open tasks, ${state.workflows.length} workflow, and ${readyCapabilities} ready capabilities.`,
       `The old gateway outage is resolved locally and in production; /agent and /api/chat both respond.`,
     ].join('\n');
   }
@@ -182,11 +199,28 @@ export async function createGatewayReply(message: string, agentId = 'albert') {
       : `${agent.name} sees no open tasks right now.`;
   }
 
+  const matchedCapability = findCapabilityForMessage(message);
+  if (matchedCapability) {
+    const trace = buildCapabilityTrace(matchedCapability, 'chat');
+    return [
+      `${agent.name} matched this request to ${matchedCapability.name}.`,
+      matchedCapability.description,
+      '',
+      `Run trace: ${trace.id}`,
+      `Agent: ${trace.agentId}`,
+      `Mode: ${trace.mode}`,
+      `Status: ${trace.status.replace('_', ' ')}`,
+      matchedCapability.endpoint ? `Endpoint: ${matchedCapability.endpoint}` : '',
+      matchedCapability.nextAction ? `Needs Adam: ${matchedCapability.nextAction}` : '',
+    ].filter(Boolean).join('\n');
+  }
+
   const openTasks = state.tasks.filter(task => !task.archivedAt && task.status !== 'done').length;
+  const capabilitySummary = getCapabilities().filter(capability => capability.status === 'ready').length;
   return [
     `I'm here, Adam. I have the Albert OS context loaded now, not just the gateway heartbeat.`,
-    `Right now I can see ${openTasks} open tasks, ${state.workflows.length} workflow, and ${state.agents.length} agents.`,
-    `Ask me for a progress report, blockers, tasks, or workflow status and I will answer from the live project feed.`,
+    `Right now I can see ${openTasks} open tasks, ${state.workflows.length} workflow, ${state.agents.length} agents, and ${capabilitySummary} ready capabilities.`,
+    `Ask me for a progress report, blockers, tasks, workflow status, or capabilities and I will answer from the live project feed.`,
   ].join('\n');
 }
 

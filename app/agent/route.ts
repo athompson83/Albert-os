@@ -7,7 +7,7 @@ export async function GET() {
   return NextResponse.json({
     ok: true,
     service: 'Albert Hermes HTTP API',
-    endpoints: ['/agent', '/hermes/agents', '/hermes/tasks', '/hermes/workflows', '/hermes/chats'],
+    endpoints: ['/agent', '/hermes/agents', '/hermes/tasks', '/hermes/workflows', '/hermes/chats', '/hermes/capabilities'],
   });
 }
 

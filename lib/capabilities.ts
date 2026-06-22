@@ -1,0 +1,171 @@
+export type CapabilityMode = 'on-demand' | 'scheduled' | 'continuous';
+export type CapabilityStatus = 'ready' | 'needs_setup' | 'blocked';
+
+export type AlbertCapability = {
+  id: string;
+  name: string;
+  description: string;
+  agentId: string;
+  mode: CapabilityMode;
+  status: CapabilityStatus;
+  endpoint?: string;
+  workflowId?: string;
+  sources: string[];
+  keywords: string[];
+  nextAction?: string;
+};
+
+export type CapabilityTrace = {
+  id: string;
+  capabilityId: string;
+  capabilityName: string;
+  agentId: string;
+  mode: CapabilityMode;
+  status: CapabilityStatus;
+  source: string;
+  timestamp: string;
+  result: string;
+};
+
+const capabilities: AlbertCapability[] = [
+  {
+    id: 'progress-report',
+    name: 'Progress Report',
+    description: 'Summarizes GitHub commits, local status reports, blockers, and recent Albert OS changes.',
+    agentId: 'albert',
+    mode: 'on-demand',
+    status: 'ready',
+    endpoint: '/api/progress',
+    sources: ['GitHub commits', 'STATUS.md', 'reports'],
+    keywords: ['progress', 'github', 'report', 'update', 'changed', 'status'],
+  },
+  {
+    id: 'task-review',
+    name: 'Task Review',
+    description: 'Lists open tasks from the Hermes gateway task queue and highlights priority/status.',
+    agentId: 'operator',
+    mode: 'on-demand',
+    status: 'ready',
+    endpoint: '/api/tasks',
+    sources: ['Hermes tasks', 'local task queue'],
+    keywords: ['task', 'tasks', 'todo', 'priority', 'queue'],
+  },
+  {
+    id: 'workflow-runner',
+    name: 'Workflow Runner',
+    description: 'Creates, edits, and manually runs Hermes workflows with agent, HTTP, notify, condition, and transform steps.',
+    agentId: 'operator',
+    mode: 'scheduled',
+    status: 'ready',
+    endpoint: '/api/workflows',
+    workflowId: 'wf_daily_brief',
+    sources: ['Hermes workflows', 'workflow run history'],
+    keywords: ['workflow', 'automation', 'run', 'schedule', 'trigger'],
+  },
+  {
+    id: 'agent-registry',
+    name: 'Agent Registry',
+    description: 'Manages Albert, SentinelQA, Operator, and custom Hermes agents with editable context.',
+    agentId: 'albert',
+    mode: 'on-demand',
+    status: 'ready',
+    endpoint: '/api/agents',
+    sources: ['Hermes agents', 'agent context'],
+    keywords: ['agent', 'agents', 'registry', 'persona', 'context'],
+  },
+  {
+    id: 'content-ops',
+    name: 'Content Operations',
+    description: 'Supports content generation, library review, newsletter drafts, and distribution workflows.',
+    agentId: 'albert',
+    mode: 'on-demand',
+    status: 'ready',
+    endpoint: '/content',
+    sources: ['content studio', 'newsletter drafts'],
+    keywords: ['content', 'newsletter', 'draft', 'post', 'library'],
+  },
+  {
+    id: 'clipping-pipeline',
+    name: 'Clipping Pipeline',
+    description: 'Tracks clipping projects, clip queue, submissions, and posting actions.',
+    agentId: 'operator',
+    mode: 'continuous',
+    status: 'needs_setup',
+    endpoint: '/clipping',
+    sources: ['clipping queue', 'project clips'],
+    keywords: ['clip', 'clipping', 'video', 'queue', 'post'],
+    nextAction: 'Connect final posting credentials before fully autonomous posting.',
+  },
+  {
+    id: 'screen-context',
+    name: 'Screen Context',
+    description: 'Provides the UI surface for screen-share driven context and operator support.',
+    agentId: 'albert',
+    mode: 'on-demand',
+    status: 'needs_setup',
+    endpoint: '/screen',
+    sources: ['screen share page'],
+    keywords: ['screen', 'share', 'context', 'observe'],
+    nextAction: 'Wire live screen capture into the Hermes gateway when local permissions are ready.',
+  },
+];
+
+export function getCapabilities() {
+  return capabilities;
+}
+
+export function getCapabilitySummary() {
+  const items = getCapabilities();
+  return {
+    total: items.length,
+    ready: items.filter(item => item.status === 'ready').length,
+    needsSetup: items.filter(item => item.status === 'needs_setup').length,
+    blocked: items.filter(item => item.status === 'blocked').length,
+    modes: {
+      onDemand: items.filter(item => item.mode === 'on-demand').length,
+      scheduled: items.filter(item => item.mode === 'scheduled').length,
+      continuous: items.filter(item => item.mode === 'continuous').length,
+    },
+  };
+}
+
+export function findCapabilityForMessage(message: string) {
+  const normalized = message.toLowerCase();
+  return getCapabilities().find(capability =>
+    capability.keywords.some(keyword => normalized.includes(keyword.toLowerCase())),
+  );
+}
+
+export function buildCapabilityTrace(capability: AlbertCapability, source = 'chat', result?: string): CapabilityTrace {
+  return {
+    id: `trace_${capability.id}_${Date.now().toString(36)}`,
+    capabilityId: capability.id,
+    capabilityName: capability.name,
+    agentId: capability.agentId,
+    mode: capability.mode,
+    status: capability.status,
+    source,
+    timestamp: new Date().toISOString(),
+    result: result || `${capability.name} is ${capability.status.replace('_', ' ')} via ${capability.endpoint || 'Albert OS'}.`,
+  };
+}
+
+export function buildCapabilitiesReply() {
+  const summary = getCapabilitySummary();
+  const ready = getCapabilities().filter(item => item.status === 'ready');
+  const setup = getCapabilities().filter(item => item.status !== 'ready');
+
+  return [
+    `Albert has ${summary.total} discoverable capabilities loaded from the Hermes catalog.`,
+    '',
+    'Ready now:',
+    ...ready.map(item => `- ${item.name}: ${item.description}`),
+    '',
+    'Needs setup:',
+    ...(setup.length
+      ? setup.map(item => `- ${item.name}: ${item.nextAction || item.description}`)
+      : ['- No setup gaps listed.']),
+    '',
+    'Open the Capabilities page for the full catalog: /capabilities',
+  ].join('\n');
+}

@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
+import { getCapabilities, getCapabilitySummary } from '@/lib/capabilities';
 
 export type ProgressUpdate = {
   id: string;
@@ -113,6 +114,17 @@ export async function getProgressSnapshot() {
     });
 
   const latest = github[0] || updates[0];
+  const capabilitySummary = getCapabilitySummary();
+  const capabilityReadiness = getCapabilities().map(capability => ({
+    id: capability.id,
+    name: capability.name,
+    status: capability.status,
+    mode: capability.mode,
+    agentId: capability.agentId,
+    endpoint: capability.endpoint,
+    nextAction: capability.nextAction,
+  }));
+
   return {
     generatedAt: new Date().toISOString(),
     repo: 'athompson83/Albert-os',
@@ -123,9 +135,15 @@ export async function getProgressSnapshot() {
       reports: reportUpdates.length,
       status: statusUpdates.length,
       blockers: blockers.length,
+      capabilities: capabilitySummary.total,
+      readyCapabilities: capabilitySummary.ready,
     },
     blockers,
     updates,
+    capabilities: {
+      summary: capabilitySummary,
+      readiness: capabilityReadiness,
+    },
   };
 }
 
