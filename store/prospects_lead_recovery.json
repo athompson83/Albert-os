@@ -1,0 +1,464 @@
+[
+  {
+    "name": "Target Roofing",
+    "url": "https://targetroofers.com/contact/",
+    "service": "roofing",
+    "city": "Fort Myers",
+    "phone": "239-932-2606",
+    "lead_capture_score": 0,
+    "weaknesses": [
+      "website_error"
+    ],
+    "error": "HTTP Error 403: Forbidden"
+  },
+  {
+    "name": "Best Choice Roofing",
+    "url": "https://bestchoiceroofing.com/fort-myers/",
+    "service": "roofing",
+    "city": "Fort Myers",
+    "phone": null,
+    "lead_capture_score": 0,
+    "weaknesses": [
+      "website_error"
+    ],
+    "error": "HTTP Error 403: Forbidden"
+  },
+  {
+    "name": "Crowther Roofing",
+    "url": null,
+    "service": "roofing",
+    "city": "Fort Myers",
+    "phone": null,
+    "lead_capture_score": 0,
+    "weaknesses": [
+      "no_website"
+    ]
+  },
+  {
+    "name": "Resolute Roofing",
+    "url": null,
+    "service": "roofing",
+    "city": "Fort Myers",
+    "phone": null,
+    "lead_capture_score": 0,
+    "weaknesses": [
+      "no_website"
+    ]
+  },
+  {
+    "name": "Durabilis Roofing",
+    "url": null,
+    "service": "roofing",
+    "city": "Fort Myers",
+    "phone": null,
+    "lead_capture_score": 0,
+    "weaknesses": [
+      "no_website"
+    ]
+  },
+  {
+    "name": "Roofer Fort Myers",
+    "url": null,
+    "service": "roofing",
+    "city": "Fort Myers",
+    "phone": null,
+    "lead_capture_score": 0,
+    "weaknesses": [
+      "no_website"
+    ]
+  },
+  {
+    "name": "Storm Roofing",
+    "url": null,
+    "service": "roofing",
+    "city": "Fort Myers",
+    "phone": null,
+    "lead_capture_score": 0,
+    "weaknesses": [
+      "no_website"
+    ]
+  },
+  {
+    "name": "Florida Roofing Solutions",
+    "url": null,
+    "service": "roofing",
+    "city": "Fort Myers",
+    "phone": null,
+    "lead_capture_score": 0,
+    "weaknesses": [
+      "no_website"
+    ]
+  },
+  {
+    "name": "AAA Air Experts",
+    "url": null,
+    "service": "hvac",
+    "city": "Fort Myers",
+    "phone": null,
+    "lead_capture_score": 0,
+    "weaknesses": [
+      "no_website"
+    ]
+  },
+  {
+    "name": "Air Medic",
+    "url": null,
+    "service": "hvac",
+    "city": "Fort Myers",
+    "phone": null,
+    "lead_capture_score": 0,
+    "weaknesses": [
+      "no_website"
+    ]
+  },
+  {
+    "name": "Bay Area Air Conditioning",
+    "url": null,
+    "service": "hvac",
+    "city": "Fort Myers",
+    "phone": null,
+    "lead_capture_score": 0,
+    "weaknesses": [
+      "no_website"
+    ]
+  },
+  {
+    "name": "Comfort Tech",
+    "url": null,
+    "service": "hvac",
+    "city": "Fort Myers",
+    "phone": null,
+    "lead_capture_score": 0,
+    "weaknesses": [
+      "no_website"
+    ]
+  },
+  {
+    "name": "Air Care Heating & Cooling",
+    "url": null,
+    "service": "hvac",
+    "city": "Fort Myers",
+    "phone": null,
+    "lead_capture_score": 0,
+    "weaknesses": [
+      "no_website"
+    ]
+  },
+  {
+    "name": "All Seasons Air",
+    "url": null,
+    "service": "hvac",
+    "city": "Fort Myers",
+    "phone": null,
+    "lead_capture_score": 0,
+    "weaknesses": [
+      "no_website"
+    ]
+  },
+  {
+    "name": "One Hour Air Conditioning",
+    "url": null,
+    "service": "hvac",
+    "city": "Fort Myers",
+    "phone": null,
+    "lead_capture_score": 0,
+    "weaknesses": [
+      "no_website"
+    ]
+  },
+  {
+    "name": "Mister Sparky HVAC",
+    "url": null,
+    "service": "hvac",
+    "city": "Fort Myers",
+    "phone": null,
+    "lead_capture_score": 0,
+    "weaknesses": [
+      "no_website"
+    ]
+  },
+  {
+    "name": "Servpro of Fort Myers",
+    "url": null,
+    "service": "water_damage",
+    "city": "Fort Myers",
+    "phone": null,
+    "lead_capture_score": 0,
+    "weaknesses": [
+      "no_website"
+    ]
+  },
+  {
+    "name": "Restoration 1 of Fort Myers",
+    "url": null,
+    "service": "water_damage",
+    "city": "Fort Myers",
+    "phone": null,
+    "lead_capture_score": 0,
+    "weaknesses": [
+      "no_website"
+    ]
+  },
+  {
+    "name": "PuroClean of Fort Myers",
+    "url": null,
+    "service": "water_damage",
+    "city": "Fort Myers",
+    "phone": null,
+    "lead_capture_score": 0,
+    "weaknesses": [
+      "no_website"
+    ]
+  },
+  {
+    "name": "Rainbow Restoration",
+    "url": null,
+    "service": "water_damage",
+    "city": "Fort Myers",
+    "phone": null,
+    "lead_capture_score": 0,
+    "weaknesses": [
+      "no_website"
+    ]
+  },
+  {
+    "name": "SERVPRO of Naples",
+    "url": null,
+    "service": "water_damage",
+    "city": "Naples",
+    "phone": null,
+    "lead_capture_score": 0,
+    "weaknesses": [
+      "no_website"
+    ]
+  },
+  {
+    "name": "Swann Brothers Plumbing",
+    "url": null,
+    "service": "plumbing",
+    "city": "Fort Myers",
+    "phone": null,
+    "lead_capture_score": 0,
+    "weaknesses": [
+      "no_website"
+    ]
+  },
+  {
+    "name": "Ken Plumbing",
+    "url": null,
+    "service": "plumbing",
+    "city": "Fort Myers",
+    "phone": null,
+    "lead_capture_score": 0,
+    "weaknesses": [
+      "no_website"
+    ]
+  },
+  {
+    "name": "Mr. Rooter Plumbing",
+    "url": null,
+    "service": "plumbing",
+    "city": "Fort Myers",
+    "phone": null,
+    "lead_capture_score": 0,
+    "weaknesses": [
+      "no_website"
+    ]
+  },
+  {
+    "name": "Benjamin Franklin Plumbing",
+    "url": null,
+    "service": "plumbing",
+    "city": "Fort Myers",
+    "phone": null,
+    "lead_capture_score": 0,
+    "weaknesses": [
+      "no_website"
+    ]
+  },
+  {
+    "name": "Roto-Rooter",
+    "url": null,
+    "service": "plumbing",
+    "city": "Fort Myers",
+    "phone": null,
+    "lead_capture_score": 0,
+    "weaknesses": [
+      "no_website"
+    ]
+  },
+  {
+    "name": "Fort Myers Tree Service",
+    "url": null,
+    "service": "tree",
+    "city": "Fort Myers",
+    "phone": null,
+    "lead_capture_score": 0,
+    "weaknesses": [
+      "no_website"
+    ]
+  },
+  {
+    "name": "Tree Service Fort Myers",
+    "url": null,
+    "service": "tree",
+    "city": "Fort Myers",
+    "phone": null,
+    "lead_capture_score": 0,
+    "weaknesses": [
+      "no_website"
+    ]
+  },
+  {
+    "name": "Palm Tree Service",
+    "url": null,
+    "service": "tree",
+    "city": "Fort Myers",
+    "phone": null,
+    "lead_capture_score": 0,
+    "weaknesses": [
+      "no_website"
+    ]
+  },
+  {
+    "name": "Laser Spa Fort Myers",
+    "url": null,
+    "service": "med_spa",
+    "city": "Fort Myers",
+    "phone": null,
+    "lead_capture_score": 0,
+    "weaknesses": [
+      "no_website"
+    ]
+  },
+  {
+    "name": "Skin Spa Fort Myers",
+    "url": null,
+    "service": "med_spa",
+    "city": "Fort Myers",
+    "phone": null,
+    "lead_capture_score": 0,
+    "weaknesses": [
+      "no_website"
+    ]
+  },
+  {
+    "name": "Medical Spa Naples",
+    "url": null,
+    "service": "med_spa",
+    "city": "Naples",
+    "phone": null,
+    "lead_capture_score": 0,
+    "weaknesses": [
+      "no_website"
+    ]
+  },
+  {
+    "name": "Fort Myers Dental",
+    "url": null,
+    "service": "dental",
+    "city": "Fort Myers",
+    "phone": null,
+    "lead_capture_score": 0,
+    "weaknesses": [
+      "no_website"
+    ]
+  },
+  {
+    "name": "Smiles Dental Fort Myers",
+    "url": null,
+    "service": "dental",
+    "city": "Fort Myers",
+    "phone": null,
+    "lead_capture_score": 0,
+    "weaknesses": [
+      "no_website"
+    ]
+  },
+  {
+    "name": "Family Dental Fort Myers",
+    "url": null,
+    "service": "dental",
+    "city": "Fort Myers",
+    "phone": null,
+    "lead_capture_score": 0,
+    "weaknesses": [
+      "no_website"
+    ]
+  },
+  {
+    "name": "Fort Myers Personal Injury Lawyer",
+    "url": null,
+    "service": "law",
+    "city": "Fort Myers",
+    "phone": null,
+    "lead_capture_score": 0,
+    "weaknesses": [
+      "no_website"
+    ]
+  },
+  {
+    "name": "Florida Injury Law Firm",
+    "url": null,
+    "service": "law",
+    "city": "Fort Myers",
+    "phone": null,
+    "lead_capture_score": 0,
+    "weaknesses": [
+      "no_website"
+    ]
+  },
+  {
+    "name": "Fort Myers Family Law",
+    "url": null,
+    "service": "law",
+    "city": "Fort Myers",
+    "phone": null,
+    "lead_capture_score": 0,
+    "weaknesses": [
+      "no_website"
+    ]
+  },
+  {
+    "name": "Fort Myers Real Estate Group",
+    "url": null,
+    "service": "real_estate",
+    "city": "Fort Myers",
+    "phone": null,
+    "lead_capture_score": 0,
+    "weaknesses": [
+      "no_website"
+    ]
+  },
+  {
+    "name": "SW Florida Realty",
+    "url": null,
+    "service": "real_estate",
+    "city": "Fort Myers",
+    "phone": null,
+    "lead_capture_score": 0,
+    "weaknesses": [
+      "no_website"
+    ]
+  },
+  {
+    "name": "Crown Roofing",
+    "url": "https://crownroofing.com/roofing-in-fort-myers/",
+    "service": "roofing",
+    "city": "Fort Myers",
+    "phone": "855-794-9639",
+    "lead_capture_score": 4,
+    "weaknesses": [
+      "no_calendar"
+    ]
+  },
+  {
+    "name": "Evans Roofing",
+    "url": "https://www.evansroof.com/contact-fort-myers",
+    "service": "roofing",
+    "city": "Fort Myers",
+    "phone": null,
+    "lead_capture_score": 5,
+    "weaknesses": []
+  }
+]

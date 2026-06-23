@@ -1,0 +1,130 @@
+[
+  {
+    "name": "Evans Roofing",
+    "url": "https://www.evansroof.com/contact-fort-myers",
+    "phone": "239-XXX-XXXX",
+    "service": "roofing",
+    "city": "Fort Myers",
+    "lead_capture": {
+      "chat": true,
+      "form": true,
+      "phone": true,
+      "sms": true,
+      "calendar": true,
+      "live_person": false,
+      "score": 5
+    },
+    "weaknesses": []
+  },
+  {
+    "name": "Durabilis Roofing",
+    "url": null,
+    "phone": null,
+    "service": "roofing",
+    "city": "Fort Myers",
+    "lead_capture": "no_website",
+    "score": 0
+  },
+  {
+    "name": "Target Roofing",
+    "url": "https://targetroofers.com/contact/",
+    "phone": "239-932-2606",
+    "service": "roofing",
+    "city": "Fort Myers",
+    "lead_capture": "error",
+    "score": 0,
+    "error": "HTTP Error 403: Forbidden"
+  },
+  {
+    "name": "Crown Roofing",
+    "url": "https://crownroofing.com/roofing-in-fort-myers/",
+    "phone": "855-794-9639",
+    "service": "roofing",
+    "city": "Fort Myers",
+    "lead_capture": {
+      "chat": true,
+      "form": true,
+      "phone": true,
+      "sms": true,
+      "calendar": false,
+      "live_person": false,
+      "score": 4
+    },
+    "weaknesses": [
+      "no_calendar"
+    ]
+  },
+  {
+    "name": "Best Choice Roofing",
+    "url": "https://bestchoiceroofing.com/fort-myers/",
+    "phone": null,
+    "service": "roofing",
+    "city": "Fort Myers",
+    "lead_capture": "error",
+    "score": 0,
+    "error": "HTTP Error 403: Forbidden"
+  },
+  {
+    "name": "AAA Air Experts",
+    "url": null,
+    "phone": null,
+    "service": "hvac",
+    "city": "Fort Myers",
+    "lead_capture": "no_website",
+    "score": 0
+  },
+  {
+    "name": "Air Medic",
+    "url": null,
+    "phone": null,
+    "service": "hvac",
+    "city": "Fort Myers",
+    "lead_capture": "no_website",
+    "score": 0
+  },
+  {
+    "name": "Bay Area Air Conditioning",
+    "url": null,
+    "phone": null,
+    "service": "hvac",
+    "city": "Fort Myers",
+    "lead_capture": "no_website",
+    "score": 0
+  },
+  {
+    "name": "Swann Brothers Plumbing",
+    "url": null,
+    "phone": null,
+    "service": "plumbing",
+    "city": "Fort Myers",
+    "lead_capture": "no_website",
+    "score": 0
+  },
+  {
+    "name": "Ken Plumbing",
+    "url": null,
+    "phone": null,
+    "service": "plumbing",
+    "city": "Fort Myers",
+    "lead_capture": "no_website",
+    "score": 0
+  },
+  {
+    "name": "Servpro of Fort Myers",
+    "url": null,
+    "phone": null,
+    "service": "water_damage",
+    "city": "Fort Myers",
+    "lead_capture": "no_website",
+    "score": 0
+  },
+  {
+    "name": "Restoration 1 of Fort Myers",
+    "url": null,
+    "phone": null,
+    "service": "water_damage",
+    "city": "Fort Myers",
+    "lead_capture": "no_website",
+    "score": 0
+  }
+]

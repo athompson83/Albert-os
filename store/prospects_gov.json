@@ -1,0 +1,122 @@
+[
+  {
+    "name": "Tech Solutions Fort Myers",
+    "service": "it_cybersecurity",
+    "city": "Fort Myers",
+    "naics": "541512"
+  },
+  {
+    "name": "SW Florida IT Services",
+    "service": "it_cybersecurity",
+    "city": "Fort Myers",
+    "naics": "541512"
+  },
+  {
+    "name": "Naples Cyber Security",
+    "service": "it_cybersecurity",
+    "city": "Naples",
+    "naics": "541519"
+  },
+  {
+    "name": "Fort Myers Computer Services",
+    "service": "it_cybersecurity",
+    "city": "Fort Myers",
+    "naics": "541512"
+  },
+  {
+    "name": "Gulf Coast Technology",
+    "service": "it_cybersecurity",
+    "city": "Fort Myers",
+    "naics": "541512"
+  },
+  {
+    "name": "Fort Myers Janitorial",
+    "service": "janitorial",
+    "city": "Fort Myers",
+    "naics": "561720"
+  },
+  {
+    "name": "SW Florida Cleaning Services",
+    "service": "janitorial",
+    "city": "Fort Myers",
+    "naics": "561720"
+  },
+  {
+    "name": "Naples Commercial Cleaning",
+    "service": "janitorial",
+    "city": "Naples",
+    "naics": "561720"
+  },
+  {
+    "name": "Lee County Cleaning",
+    "service": "janitorial",
+    "city": "Fort Myers",
+    "naics": "561720"
+  },
+  {
+    "name": "Gulf Coast Janitorial",
+    "service": "janitorial",
+    "city": "Fort Myers",
+    "naics": "561720"
+  },
+  {
+    "name": "Fort Myers Construction",
+    "service": "construction",
+    "city": "Fort Myers",
+    "naics": "236220"
+  },
+  {
+    "name": "SW Florida Builders",
+    "service": "construction",
+    "city": "Fort Myers",
+    "naics": "236220"
+  },
+  {
+    "name": "Naples General Contractor",
+    "service": "construction",
+    "city": "Naples",
+    "naics": "236220"
+  },
+  {
+    "name": "Lee County Construction",
+    "service": "construction",
+    "city": "Fort Myers",
+    "naics": "236220"
+  },
+  {
+    "name": "Gulf Coast Contractors",
+    "service": "construction",
+    "city": "Fort Myers",
+    "naics": "236220"
+  },
+  {
+    "name": "Fort Myers Staffing",
+    "service": "staffing",
+    "city": "Fort Myers",
+    "naics": "561320"
+  },
+  {
+    "name": "SW Florida Staffing Agency",
+    "service": "staffing",
+    "city": "Fort Myers",
+    "naics": "561320"
+  },
+  {
+    "name": "Naples Temporary Staffing",
+    "service": "staffing",
+    "city": "Naples",
+    "naics": "561320"
+  },
+  {
+    "name": "Fort Myers Medical Supply",
+    "service": "medical_supply",
+    "city": "Fort Myers",
+    "naics": "423450"
+  },
+  {
+    "name": "SW Florida Medical Equipment",
+    "service": "medical_supply",
+    "city": "Fort Myers",
+    "naics": "423450"
+  }
+]

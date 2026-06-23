@@ -1,0 +1,184 @@
+[
+  {
+    "name": "Strike Force Roofing",
+    "url": "https://strikeforceroofing.com/",
+    "service": "roofing",
+    "city": "Fort Myers",
+    "score": 0,
+    "weaknesses": [
+      "no_live_chat",
+      "no_contact_form",
+      "no_phone_visible",
+      "no_sms_followup",
+      "no_online_booking"
+    ],
+    "phones": [],
+    "has_chat": false,
+    "has_form": false,
+    "has_calendar": false
+  },
+  {
+    "name": "Quick Roofing",
+    "url": "https://www.quickroofing.com/fort-myers-fl/",
+    "service": "roofing",
+    "city": "Fort Myers",
+    "score": 0,
+    "weaknesses": [
+      "error"
+    ],
+    "error": "HTTP Error 403: Forbidden"
+  },
+  {
+    "name": "Boss Roofing Experts",
+    "url": "https://bossroofingexperts.com/",
+    "service": "roofing",
+    "city": "Fort Myers",
+    "score": 0,
+    "weaknesses": [
+      "error"
+    ],
+    "error": "HTTP Error 403: Forbidden"
+  },
+  {
+    "name": "Stay Dry Roofing",
+    "url": "https://staydryroofingfl.com/",
+    "service": "roofing",
+    "city": "Fort Myers",
+    "score": 0,
+    "weaknesses": [
+      "error"
+    ],
+    "error": "<urlopen error timed out>"
+  },
+  {
+    "name": "Servpro Fort Myers",
+    "url": "https://www.servpro.com/locations/fl/fort-myers",
+    "service": "water_damage",
+    "city": "Fort Myers",
+    "score": 0,
+    "weaknesses": [
+      "error"
+    ],
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "name": "Crowther Roofing",
+    "url": "https://crowther.net/locations/fort-myers",
+    "service": "roofing",
+    "city": "Fort Myers",
+    "score": 3,
+    "weaknesses": [
+      "no_live_chat",
+      "no_online_booking"
+    ],
+    "phones": [
+      "239-337-0026",
+      "239-337-0026",
+      "3298482240"
+    ],
+    "has_chat": false,
+    "has_form": true,
+    "has_calendar": false
+  },
+  {
+    "name": "Crowther HVAC",
+    "url": "https://crowther.net/locations/fort-myers",
+    "service": "hvac",
+    "city": "Fort Myers",
+    "score": 3,
+    "weaknesses": [
+      "no_live_chat",
+      "no_online_booking"
+    ],
+    "phones": [
+      "239-337-0026",
+      "239-337-0026",
+      "3298482240"
+    ],
+    "has_chat": false,
+    "has_form": true,
+    "has_calendar": false
+  },
+  {
+    "name": "Crown Roofing",
+    "url": "https://crownroofing.com/roofing-in-fort-myers/",
+    "service": "roofing",
+    "city": "Fort Myers",
+    "score": 4,
+    "weaknesses": [
+      "no_online_booking"
+    ],
+    "phones": [
+      "1781803702",
+      "1781803702",
+      "855-794-9639"
+    ],
+    "has_chat": true,
+    "has_form": true,
+    "has_calendar": false
+  },
+  {
+    "name": "Fair and Square Roofing",
+    "url": "https://fsroofs.com/",
+    "service": "roofing",
+    "city": "Fort Myers",
+    "score": 5,
+    "weaknesses": [],
+    "phones": [
+      "1727981377",
+      "1727981377",
+      "1727981377"
+    ],
+    "has_chat": true,
+    "has_form": true,
+    "has_calendar": true
+  },
+  {
+    "name": "Shamrock Roofing",
+    "url": "https://www.shamrockroofingco.com/service-areas/ft-myers/",
+    "service": "roofing",
+    "city": "Fort Myers",
+    "score": 5,
+    "weaknesses": [],
+    "phones": [
+      "2014592564",
+      "2014592564",
+      "2014592564"
+    ],
+    "has_chat": true,
+    "has_form": true,
+    "has_calendar": true
+  },
+  {
+    "name": "DR Martineau Roofing",
+    "url": "https://drm-roofing.com/",
+    "service": "roofing",
+    "city": "Fort Myers",
+    "score": 5,
+    "weaknesses": [],
+    "phones": [
+      "239-332-1441",
+      "7569007900",
+      "8210133288"
+    ],
+    "has_chat": true,
+    "has_form": true,
+    "has_calendar": true
+  },
+  {
+    "name": "Evans Roofing",
+    "url": "https://www.evansroof.com/contact-fort-myers",
+    "service": "roofing",
+    "city": "Fort Myers",
+    "score": 5,
+    "weaknesses": [],
+    "phones": [
+      "4424296459",
+      "6178724679",
+      "4424296459"
+    ],
+    "has_chat": true,
+    "has_form": true,
+    "has_calendar": true
+  }
+]

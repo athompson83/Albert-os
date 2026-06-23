@@ -1,0 +1,92 @@
+[
+  {
+    "name": "Fort Myers Accounting",
+    "service": "accounting",
+    "city": "Fort Myers",
+    "size": "small"
+  },
+  {
+    "name": "SW Florida CPAs",
+    "service": "accounting",
+    "city": "Fort Myers",
+    "size": "small"
+  },
+  {
+    "name": "Naples Accounting Firm",
+    "service": "accounting",
+    "city": "Naples",
+    "size": "small"
+  },
+  {
+    "name": "Lee County Bookkeeping",
+    "service": "accounting",
+    "city": "Fort Myers",
+    "size": "small"
+  },
+  {
+    "name": "Gulf Coast Tax Services",
+    "service": "accounting",
+    "city": "Fort Myers",
+    "size": "small"
+  },
+  {
+    "name": "Fort Myers Tax Prep",
+    "service": "accounting",
+    "city": "Fort Myers",
+    "size": "small"
+  },
+  {
+    "name": "SW Florida Bookkeeping",
+    "service": "accounting",
+    "city": "Fort Myers",
+    "size": "small"
+  },
+  {
+    "name": "Naples CPA Group",
+    "service": "accounting",
+    "city": "Naples",
+    "size": "small"
+  },
+  {
+    "name": "Lee County Accounting",
+    "service": "accounting",
+    "city": "Fort Myers",
+    "size": "small"
+  },
+  {
+    "name": "Gulf Coast CPAs",
+    "service": "accounting",
+    "city": "Fort Myers",
+    "size": "small"
+  },
+  {
+    "name": "Fort Myers Payroll Services",
+    "service": "accounting",
+    "city": "Fort Myers",
+    "size": "small"
+  },
+  {
+    "name": "SW Florida Tax Advisors",
+    "service": "accounting",
+    "city": "Fort Myers",
+    "size": "small"
+  },
+  {
+    "name": "Naples Bookkeeping",
+    "service": "accounting",
+    "city": "Naples",
+    "size": "small"
+  },
+  {
+    "name": "Lee County Tax Service",
+    "service": "accounting",
+    "city": "Fort Myers",
+    "size": "small"
+  },
+  {
+    "name": "Gulf Coast Accounting",
+    "service": "accounting",
+    "city": "Fort Myers",
+    "size": "small"
+  }
+]
