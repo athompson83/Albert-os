@@ -158,7 +158,7 @@ export default function RevenuePage() {
             <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, padding: 18 }}>
               <h3 style={{ margin: '0 0 12px', color: '#fff', fontSize: 15 }}>Next Revenue Actions</h3>
               <div style={{ display: 'grid', gap: 8 }}>
-                <Link href="/tasks" style={actionLink}>Handle Adam tasks</Link>
+                <Link href="/credentials" style={actionLink}>Provide credentials</Link>
                 <Link href="/products" style={actionLink}>Approve or improve products</Link>
                 <Link href="/content" style={actionLink}>Create content asset</Link>
                 <Link href="/clipping" style={actionLink}>Package short-form clips</Link>

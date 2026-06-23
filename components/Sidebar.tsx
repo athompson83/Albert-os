@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import {
   LayoutDashboard, MessageSquare, FolderKanban,
   Users, GitBranch, CheckSquare, Plug, FileText, Terminal, ScrollText,
-  Newspaper, Menu, X, Scissors, Monitor, BookOpen, Activity, Sparkles, ShoppingBag, DollarSign
+  Newspaper, Menu, X, Scissors, Monitor, BookOpen, Activity, Sparkles, ShoppingBag, DollarSign, KeyRound
 } from 'lucide-react';
 
 const primaryNav = [
@@ -14,6 +14,7 @@ const primaryNav = [
   { href: '/tasks', label: 'Tasks', icon: CheckSquare },
   { href: '/revenue', label: 'Revenue', icon: DollarSign },
   { href: '/products', label: 'Products', icon: ShoppingBag },
+  { href: '/credentials', label: 'Credentials', icon: KeyRound },
   { href: '/progress', label: 'Progress', icon: Activity },
 ];
 

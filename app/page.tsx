@@ -159,6 +159,7 @@ export default function Dashboard() {
     { href: '/chat', label: 'Chat', emoji: '💬', desc: 'Talk to Albert' },
     { href: '/revenue', label: 'Revenue', emoji: '💵', desc: 'Money dashboard' },
     { href: '/tasks', label: 'Tasks', emoji: '✅', desc: 'Task board' },
+    { href: '/credentials', label: 'Credentials', emoji: '🔐', desc: 'Hermes access' },
     { href: '/products', label: 'Products', emoji: '📦', desc: 'Review output' },
     { href: '/content', label: 'Content', emoji: '📚', desc: 'Create assets' },
     { href: '/workflows', label: 'Workflows', emoji: '⚡', desc: 'Automate tasks' },
