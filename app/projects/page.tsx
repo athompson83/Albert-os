@@ -8,8 +8,8 @@ export default function ProjectsPage() {
   return (
     <div>
       <TopBar title="Projects" />
-      <div style={{ padding: 24 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+      <div style={{ padding: 'clamp(14px, 5vw, 24px)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginBottom: 24 }}>
           <p style={{ color: 'var(--text-muted)', margin: 0, fontSize: 14 }}>{mockProjects.length} active projects across {categories.length} categories</p>
           <button style={{ background: 'var(--primary)', border: 'none', borderRadius: 7, padding: '8px 16px', color: '#fff', fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>+ New Project</button>
         </div>
@@ -20,7 +20,7 @@ export default function ProjectsPage() {
           return (
             <div key={cat} style={{ marginBottom: 32 }}>
               <h2 style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 12px' }}>{cat}</h2>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 12 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 300px), 1fr))', gap: 12 }}>
                 {projects.map(p => (
                   <Link key={p.id} href={`/tasks?project=${encodeURIComponent(p.name)}`} style={{ textDecoration: 'none' }}>
                   <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, padding: 20, cursor: 'pointer', transition: 'border-color 0.15s' }}>

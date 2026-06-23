@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import TopBar from '@/components/TopBar';
 import Link from 'next/link';
+import useIsMobile from '@/components/useIsMobile';
 import {
   BookOpen, Plus, Mic, Upload, BarChart3, Users, Globe, Zap,
   CheckCircle2, AlertCircle, ChevronRight, Layers, FileText,
@@ -26,6 +27,7 @@ const WORKFLOWS = [
 ];
 
 export default function ContentPage() {
+  const isMobile = useIsMobile();
   const [connecting, setConnecting] = useState<string | null>(null);
 
   const stats = [
@@ -36,13 +38,13 @@ export default function ContentPage() {
   ];
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <TopBar title="Content Command" />
-      <div style={{ flex: 1, overflowY: 'auto', padding: '24px', maxWidth: 1100, width: '100%', margin: '0 auto' }}>
+      <div style={{ flex: 1, overflowY: 'auto', padding: isMobile ? 14 : 24, maxWidth: 1100, width: '100%', margin: '0 auto', minWidth: 0 }}>
 
         {/* Header */}
         <div style={{ marginBottom: 24 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6, flexWrap: 'wrap' }}>
             <BookOpen size={22} style={{ color: '#a5b4fc' }} />
             <h1 style={{ fontSize: 22, fontWeight: 700, margin: 0 }}>Content Command System</h1>
             <span style={{ fontSize: 11, background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.4)', color: '#a5b4fc', borderRadius: 20, padding: '2px 10px', fontWeight: 600 }}>EMS + ECG Education</span>
@@ -53,7 +55,7 @@ export default function ContentPage() {
         </div>
 
         {/* Stats */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 20 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, minmax(0, 1fr))' : 'repeat(4, 1fr)', gap: isMobile ? 8 : 12, marginBottom: 20 }}>
           {stats.map(s => (
             <div key={s.label} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, padding: '14px 16px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: s.color, marginBottom: 8 }}>
@@ -101,7 +103,7 @@ export default function ContentPage() {
         </div>
 
         {/* Two column layout */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 20 }}>
 
           {/* Recent Content */}
           <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '16px 20px' }}>
@@ -136,7 +138,7 @@ export default function ContentPage() {
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {PLATFORMS.map(p => (
-                <div key={p.name} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', background: 'rgba(0,0,0,0.2)', borderRadius: 8 }}>
+                <div key={p.name} style={{ display: 'flex', alignItems: isMobile ? 'flex-start' : 'center', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? 6 : 10, padding: '8px 10px', background: 'rgba(0,0,0,0.2)', borderRadius: 8 }}>
                   <div style={{ width: 8, height: 8, borderRadius: '50%', background: p.color, flexShrink: 0 }} />
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 13, fontWeight: 500 }}>{p.name}</div>

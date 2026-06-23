@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import TopBar from '@/components/TopBar';
+import useIsMobile from '@/components/useIsMobile';
 
 type ProductStatus = 'draft' | 'ready' | 'needs_improvement' | 'removed' | 'published';
 
@@ -28,6 +29,7 @@ const statusColor: Record<ProductStatus, string> = {
 };
 
 export default function ProductsPage() {
+  const isMobile = useIsMobile();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Product | null>(null);
@@ -94,17 +96,17 @@ export default function ProductsPage() {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: 'var(--background)' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: 'var(--background)' }}>
       <TopBar title="Products" />
-      <div style={{ flex: 1, overflowY: 'auto', padding: 24 }}>
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, marginBottom: 20 }}>
-          <div>
+      <div style={{ flex: 1, overflowY: 'auto', padding: isMobile ? 14 : 24, minWidth: 0 }}>
+        <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'stretch' : 'flex-start', justifyContent: 'space-between', gap: 16, marginBottom: 20 }}>
+          <div style={{ minWidth: 0 }}>
             <h2 style={{ margin: 0, fontSize: 22, color: '#fff' }}>Hermes Product Workbench</h2>
             <p style={{ margin: '6px 0 0', color: 'var(--text-muted)', fontSize: 13 }}>
               Review, download, comment on, remove, or open sites Hermes creates for digital product sales.
             </p>
           </div>
-          <button onClick={load} disabled={loading} style={{ background: 'var(--primary)', border: 'none', borderRadius: 8, padding: '9px 16px', color: '#fff', cursor: 'pointer', opacity: loading ? 0.65 : 1 }}>
+          <button onClick={load} disabled={loading} style={{ background: 'var(--primary)', border: 'none', borderRadius: 8, padding: '9px 16px', color: '#fff', cursor: 'pointer', opacity: loading ? 0.65 : 1, width: isMobile ? '100%' : 'auto' }}>
             {loading ? 'Refreshing...' : 'Refresh'}
           </button>
         </div>
@@ -119,7 +121,7 @@ export default function ProductsPage() {
 
         {loading && <div style={{ color: 'var(--text-muted)', padding: 32, textAlign: 'center' }}>Loading products...</div>}
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 14 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(300px, 1fr))', gap: 14 }}>
           {!loading && visible.map(product => (
             <article
               key={product.id}
@@ -160,9 +162,9 @@ export default function ProductsPage() {
 
       {selected && (
         <div onClick={() => setSelected(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.65)', zIndex: 140, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 18 }}>
-          <div onClick={(e) => e.stopPropagation()} style={{ width: '100%', maxWidth: 760, maxHeight: '88vh', overflowY: 'auto', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, padding: 20 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 14, marginBottom: 14 }}>
-              <div>
+          <div onClick={(e) => e.stopPropagation()} style={{ width: '100%', maxWidth: 760, maxHeight: isMobile ? 'calc(100vh - 28px)' : '88vh', overflowY: 'auto', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, padding: isMobile ? 14 : 20 }}>
+            <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', gap: 14, marginBottom: 14 }}>
+              <div style={{ minWidth: 0 }}>
                 <div style={{ color: '#fff', fontWeight: 700, fontSize: 18 }}>{selected.title}</div>
                 <div style={{ color: 'var(--text-muted)', fontSize: 12, marginTop: 4 }}>{selected.status.replace('_', ' ')} / {selected.type}</div>
               </div>

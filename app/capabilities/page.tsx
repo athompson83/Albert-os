@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import TopBar from '@/components/TopBar';
+import useIsMobile from '@/components/useIsMobile';
 
 type CapabilityStatus = 'ready' | 'needs_setup' | 'blocked';
 type CapabilityMode = 'on-demand' | 'scheduled' | 'continuous';
@@ -62,6 +63,7 @@ function capabilityHref(capability: Capability) {
 
 export default function CapabilitiesPage() {
   const router = useRouter();
+  const isMobile = useIsMobile();
   const [data, setData] = useState<CapabilityResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -93,15 +95,15 @@ export default function CapabilitiesPage() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: 'var(--background)' }}>
       <TopBar title="Capabilities" />
-      <div style={{ flex: 1, overflowY: 'auto', padding: 24 }}>
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, marginBottom: 22 }}>
-          <div>
+      <div style={{ flex: 1, overflowY: 'auto', padding: isMobile ? 14 : 24, minWidth: 0 }}>
+        <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'stretch' : 'flex-start', justifyContent: 'space-between', gap: 16, marginBottom: 22 }}>
+          <div style={{ minWidth: 0 }}>
             <h2 style={{ margin: 0, fontSize: 22, color: '#fff' }}>Albert Capability Catalog</h2>
             <p style={{ margin: '6px 0 0', color: 'var(--text-muted)', fontSize: 13, maxWidth: 720 }}>
               OpenJarvis-style discoverable abilities mapped to Albert agents, Hermes endpoints, and workflow surfaces.
             </p>
           </div>
-          <button onClick={load} disabled={loading} style={{ background: 'var(--primary)', border: 'none', borderRadius: 8, padding: '9px 16px', color: '#fff', cursor: 'pointer', opacity: loading ? 0.6 : 1 }}>
+          <button onClick={load} disabled={loading} style={{ background: 'var(--primary)', border: 'none', borderRadius: 8, padding: '9px 16px', color: '#fff', cursor: 'pointer', opacity: loading ? 0.6 : 1, width: isMobile ? '100%' : 'auto' }}>
             {loading ? 'Refreshing...' : 'Refresh'}
           </button>
         </div>
@@ -112,15 +114,15 @@ export default function CapabilitiesPage() {
           </div>
         )}
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(140px, 1fr))', gap: 12, marginBottom: 18 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, minmax(0, 1fr))' : 'repeat(4, minmax(140px, 1fr))', gap: isMobile ? 8 : 12, marginBottom: 18 }}>
           {[
             ['Total', data?.summary.total ?? 0, '#a5b4fc'],
             ['Ready', data?.summary.ready ?? 0, '#10b981'],
             ['Needs setup', data?.summary.needsSetup ?? 0, '#f59e0b'],
             ['Continuous', data?.summary.modes.continuous ?? 0, '#38bdf8'],
           ].map(([label, value, color]) => (
-            <div key={String(label)} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: 16 }}>
-              <div style={{ fontSize: 26, fontWeight: 700, color: String(color) }}>{String(value)}</div>
+            <div key={String(label)} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: isMobile ? 12 : 16, minWidth: 0 }}>
+              <div style={{ fontSize: isMobile ? 22 : 26, fontWeight: 700, color: String(color) }}>{String(value)}</div>
               <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>{String(label)}</div>
             </div>
           ))}
@@ -149,7 +151,7 @@ export default function CapabilitiesPage() {
 
         {loading && <div style={{ color: 'var(--text-muted)', padding: 32, textAlign: 'center' }}>Loading capabilities...</div>}
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 14 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(320px, 1fr))', gap: 14 }}>
           {!loading && capabilities.map(capability => {
             const href = capabilityHref(capability);
             return (
@@ -163,7 +165,7 @@ export default function CapabilitiesPage() {
                   router.push(href);
                 }
               }}
-              style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: 16, display: 'flex', flexDirection: 'column', gap: 12, cursor: href ? 'pointer' : 'default', outline: 'none' }}
+              style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: isMobile ? 14 : 16, display: 'flex', flexDirection: 'column', gap: 12, cursor: href ? 'pointer' : 'default', outline: 'none', minWidth: 0 }}
             >
               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
                 <div>
@@ -177,7 +179,7 @@ export default function CapabilitiesPage() {
 
               <p style={{ margin: 0, color: 'var(--text)', fontSize: 13, lineHeight: 1.45 }}>{capability.description}</p>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 8 }}>
                 <div style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 7, padding: 10 }}>
                   <div style={{ color: 'var(--text-muted)', fontSize: 11, marginBottom: 4 }}>Mode</div>
                   <div style={{ color: '#fff', fontSize: 13 }}>{modeLabel[capability.mode]}</div>

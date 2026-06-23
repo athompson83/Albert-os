@@ -8,6 +8,7 @@ import {
   Layers, Stethoscope, Loader2, CheckCircle2, Settings,
   MicOff, Activity
 } from 'lucide-react';
+import useIsMobile from '@/components/useIsMobile';
 
 type BlockType = 'text' | 'video' | 'ecg' | 'quiz' | 'pdf' | 'case_study';
 type AITool = 'quiz' | 'study_guide' | 'flashcards' | 'case_study' | 'instructor_notes';
@@ -50,6 +51,7 @@ const MOCK_TREE = [
 ];
 
 export default function StudioPage() {
+  const isMobile = useIsMobile();
   const [blocks, setBlocks] = useState<Block[]>([]);
   const [activeTab, setActiveTab] = useState<'properties' | 'ai' | 'preview'>('properties');
   const [recording, setRecording] = useState(false);
@@ -109,7 +111,7 @@ export default function StudioPage() {
   const blockIcon = (type: BlockType) => BLOCK_TYPES.find(b => b.type === type)?.icon;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <TopBar title="Content Studio" />
 
       {/* Top toolbar */}
@@ -136,10 +138,10 @@ export default function StudioPage() {
       </div>
 
       {/* Three panel layout */}
-      <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: isMobile ? 'column' : 'row', overflow: isMobile ? 'visible' : 'hidden' }}>
 
         {/* Left: Course tree */}
-        <div style={{ width: 220, background: 'var(--surface)', borderRight: '1px solid var(--border)', overflowY: 'auto', flexShrink: 0 }}>
+        <div style={{ width: isMobile ? '100%' : 220, maxHeight: isMobile ? 180 : 'none', background: 'var(--surface)', borderRight: isMobile ? 'none' : '1px solid var(--border)', borderBottom: isMobile ? '1px solid var(--border)' : 'none', overflowY: 'auto', flexShrink: 0 }}>
           <div style={{ padding: '12px 14px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)' }}>COURSE STRUCTURE</span>
             <button style={{ background: 'transparent', border: 'none', color: '#a5b4fc', cursor: 'pointer' }}><Plus size={14} /></button>
@@ -175,7 +177,7 @@ export default function StudioPage() {
         </div>
 
         {/* Center: Editor */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '20px', background: '#0d0d0d' }}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: isMobile ? 14 : 20, background: '#0d0d0d' }}>
           <input
             value={lessonTitle}
             onChange={e => setLessonTitle(e.target.value)}
@@ -210,12 +212,12 @@ export default function StudioPage() {
                   </div>
                   <div style={{ padding: '14px 16px' }}>
                     {block.type === 'ecg' ? (
-                      <div style={{ display: 'flex', gap: 12 }}>
+                      <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 12 }}>
                         <div style={{ flex: 1, background: 'rgba(16,185,129,0.05)', border: '1px dashed rgba(16,185,129,0.3)', borderRadius: 8, padding: 20, textAlign: 'center', color: 'var(--text-muted)', fontSize: 13 }}>
                           Drop ECG image here or click to upload<br />
                           <span style={{ fontSize: 11, color: 'rgba(16,185,129,0.6)' }}>Supported: PDF, JPG, PNG</span>
                         </div>
-                        <div style={{ width: 180, background: 'rgba(0,0,0,0.3)', borderRadius: 8, padding: '12px 14px', fontSize: 11 }}>
+                        <div style={{ width: isMobile ? '100%' : 180, background: 'rgba(0,0,0,0.3)', borderRadius: 8, padding: '12px 14px', fontSize: 11 }}>
                           <div style={{ fontWeight: 600, color: '#10b981', marginBottom: 8 }}>ECG Metadata</div>
                           <div style={{ color: 'var(--text-muted)', marginBottom: 4 }}>Classification:</div>
                           <select style={{ width: '100%', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 4, padding: '3px 6px', color: '#ccc', fontSize: 11, marginBottom: 8 }}>
@@ -252,7 +254,7 @@ export default function StudioPage() {
         </div>
 
         {/* Right: Properties / AI / Preview */}
-        <div style={{ width: 280, background: 'var(--surface)', borderLeft: '1px solid var(--border)', display: 'flex', flexDirection: 'column', flexShrink: 0 }}>
+        <div style={{ width: isMobile ? '100%' : 280, background: 'var(--surface)', borderLeft: isMobile ? 'none' : '1px solid var(--border)', borderTop: isMobile ? '1px solid var(--border)' : 'none', display: 'flex', flexDirection: 'column', flexShrink: 0 }}>
           {/* Tabs */}
           <div style={{ display: 'flex', borderBottom: '1px solid var(--border)' }}>
             {(['properties', 'ai', 'preview'] as const).map(tab => (

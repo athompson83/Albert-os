@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
 import TopBar from '@/components/TopBar';
+import useIsMobile from '@/components/useIsMobile';
 
 type TriggerType = 'manual' | 'webhook' | 'schedule' | 'app';
 type StepType = 'agent' | 'http' | 'notify' | 'condition' | 'transform';
@@ -63,6 +64,7 @@ function newStep(type: StepType): Step {
 }
 
 export default function WorkflowsPage() {
+  const isMobile = useIsMobile();
   const [workflows, setWorkflows] = useState<Workflow[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Workflow | null>(null);
@@ -135,9 +137,9 @@ export default function WorkflowsPage() {
     const addStep = (type: StepType) => setSelected(x => x ? { ...x, steps: [...x.steps, newStep(type)] } : x);
 
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: s.bg }}>
+      <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: s.bg }}>
         <TopBar title="Workflows" />
-        <div style={{ flex: 1, overflowY: 'auto', padding: '20px', maxWidth: 800, margin: '0 auto', width: '100%' }}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: isMobile ? 14 : 20, maxWidth: 800, margin: '0 auto', width: '100%', minWidth: 0 }}>
           {/* Header */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24, flexWrap: 'wrap' }}>
             <button onClick={() => { saveWorkflow(); setSelected(null); setRunResult(null); }} style={{ background: 'transparent', border: s.border, borderRadius: 8, padding: '6px 14px', color: s.muted, cursor: 'pointer', fontSize: 13 }}>← Back</button>
@@ -160,7 +162,7 @@ export default function WorkflowsPage() {
             </select>
             {selected.trigger.type === 'manual' && <div style={{ fontSize: 13, color: s.muted, background: 'var(--surface-2)', borderRadius: 7, padding: '10px 14px' }}>Run from the Workflows page or call the API directly.</div>}
             {selected.trigger.type === 'webhook' && (
-              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 8, alignItems: isMobile ? 'stretch' : 'center' }}>
                 <input readOnly value={'[proxy-url]/webhooks/' + selected.id} style={{ flex: 1, background: 'var(--surface-2)', border: s.border, borderRadius: 7, padding: '8px 12px', color: s.muted, fontSize: 12 }} />
                 <button onClick={() => navigator.clipboard?.writeText('[proxy-url]/webhooks/' + selected.id)} style={{ background: 'transparent', border: s.border, borderRadius: 7, padding: '8px 12px', color: s.muted, cursor: 'pointer', fontSize: 12 }}>Copy</button>
               </div>
@@ -179,7 +181,7 @@ export default function WorkflowsPage() {
               </div>
             )}
             {selected.trigger.type === 'app' && (
-              <div style={{ display: 'flex', gap: 8 }}>
+              <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 8 }}>
                 <select value={selected.trigger.config.app || ''} onChange={e => setTriggerConfig({ app: e.target.value })} style={{ flex: 1, background: 'var(--surface-2)', border: s.border, borderRadius: 7, padding: '8px 12px', color: s.text, fontSize: 13 }}>
                   <option value="">Select app...</option>
                   <option value="gmail">Gmail</option>
@@ -216,8 +218,8 @@ export default function WorkflowsPage() {
               )}
               {step.type === 'http' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <select value={String(step.config.method || 'GET')} onChange={e => updateStepConfig(step.id, { method: e.target.value })} style={{ background: 'var(--surface-2)', border: s.border, borderRadius: 7, padding: '8px 10px', color: s.text, fontSize: 13, width: 100 }}>
+                  <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 8 }}>
+                    <select value={String(step.config.method || 'GET')} onChange={e => updateStepConfig(step.id, { method: e.target.value })} style={{ background: 'var(--surface-2)', border: s.border, borderRadius: 7, padding: '8px 10px', color: s.text, fontSize: 13, width: isMobile ? '100%' : 100 }}>
                       {['GET','POST','PUT','PATCH','DELETE'].map(m => <option key={m}>{m}</option>)}
                     </select>
                     <input value={String(step.config.url || '')} onChange={e => updateStepConfig(step.id, { url: e.target.value })} placeholder="https://api.example.com/endpoint" style={{ flex: 1, background: 'var(--surface-2)', border: s.border, borderRadius: 7, padding: '8px 12px', color: s.text, fontSize: 13 }} />
@@ -235,7 +237,7 @@ export default function WorkflowsPage() {
               )}
               {step.type === 'condition' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 8, alignItems: isMobile ? 'stretch' : 'center' }}>
                     <input value={String(step.config.left || '')} onChange={e => updateStepConfig(step.id, { left: e.target.value })} placeholder="{{step1.reply}}" style={{ flex: 1, background: 'var(--surface-2)', border: s.border, borderRadius: 7, padding: '8px 10px', color: s.text, fontSize: 13 }} />
                     <select value={String(step.config.operator || '==')} onChange={e => updateStepConfig(step.id, { operator: e.target.value })} style={{ background: 'var(--surface-2)', border: s.border, borderRadius: 7, padding: '8px 10px', color: s.text, fontSize: 13 }}>
                       {['==','!=','>','<','contains','not contains'].map(o => <option key={o}>{o}</option>)}
@@ -284,12 +286,12 @@ export default function WorkflowsPage() {
 
   // ── List View ─────────────────────────────────────────────────────────────
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: s.bg }}>
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: s.bg }}>
       <TopBar title="Workflows" />
-      <div style={{ flex: 1, overflowY: 'auto', padding: '24px 20px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+      <div style={{ flex: 1, overflowY: 'auto', padding: isMobile ? 14 : '24px 20px', minWidth: 0 }}>
+        <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'stretch' : 'center', gap: 12, marginBottom: 24 }}>
           <h2 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: s.text }}>Your Workflows</h2>
-          <button onClick={createWorkflow} style={{ background: s.primary, border: 'none', borderRadius: 8, padding: '10px 18px', color: '#fff', cursor: 'pointer', fontSize: 14, fontWeight: 600 }}>+ New Workflow</button>
+          <button onClick={createWorkflow} style={{ background: s.primary, border: 'none', borderRadius: 8, padding: '10px 18px', color: '#fff', cursor: 'pointer', fontSize: 14, fontWeight: 600, width: isMobile ? '100%' : 'auto' }}>+ New Workflow</button>
         </div>
         {loading && <div style={{ color: s.muted, textAlign: 'center', padding: 40 }}>Loading...</div>}
         {!loading && workflows.length === 0 && (
@@ -299,9 +301,9 @@ export default function WorkflowsPage() {
             <div style={{ fontSize: 13 }}>Create your first automation</div>
           </div>
         )}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 16 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(340px, 1fr))', gap: 16 }}>
           {workflows.map(wf => (
-            <div key={wf.id} onClick={() => setSelected(wf)} style={{ background: s.surface, border: '1px solid var(--border)', borderRadius: 12, padding: 18, cursor: 'pointer' }}>
+            <div key={wf.id} onClick={() => setSelected(wf)} style={{ background: s.surface, border: '1px solid var(--border)', borderRadius: 12, padding: isMobile ? 14 : 18, cursor: 'pointer', minWidth: 0 }}>
               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 8 }}>
                 <div style={{ cursor: 'pointer', flex: 1 }} onClick={() => setSelected(wf)}>
                   <div style={{ fontWeight: 700, fontSize: 15, color: s.text, marginBottom: 4 }}>{wf.name}</div>

@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
 import TopBar from '@/components/TopBar';
+import useIsMobile from '@/components/useIsMobile';
 
 type Status = 'todo' | 'inprogress' | 'review' | 'done';
 type Priority = 'high' | 'medium' | 'low';
@@ -43,6 +44,7 @@ const SOURCE_BADGE: Record<string, { label: string; color: string }> = {
 };
 
 export default function TasksPage() {
+  const isMobile = useIsMobile();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [dragging, setDragging] = useState<string | null>(null);
@@ -198,9 +200,9 @@ export default function TasksPage() {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <TopBar title="Tasks" />
-      <div style={{ padding: '12px 20px', borderBottom: '1px solid var(--border)', display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+      <div style={{ padding: isMobile ? '10px 14px' : '12px 20px', borderBottom: '1px solid var(--border)', display: 'flex', gap: 8, alignItems: isMobile ? 'stretch' : 'center', flexDirection: isMobile ? 'column' : 'row', flexWrap: 'wrap' }}>
         {/* Project filter */}
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', flex: 1 }}>
           {projects.slice(0, 8).map(p => (
@@ -227,15 +229,15 @@ export default function TasksPage() {
       {loading ? (
         <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)' }}>⏳ Loading tasks...</div>
       ) : (
-        <div style={{ flex: 1, overflowX: 'auto', padding: '16px 20px' }}>
-          <div style={{ display: 'flex', gap: 14, minWidth: 900, height: '100%' }}>
+        <div style={{ flex: 1, overflowX: isMobile ? 'hidden' : 'auto', padding: isMobile ? '14px' : '16px 20px' }}>
+          <div style={{ display: isMobile ? 'grid' : 'flex', gridTemplateColumns: '1fr', gap: 14, minWidth: isMobile ? 0 : 900, height: '100%' }}>
             {COLUMNS.map(col => {
               const colTasks = filtered.filter(t => t.status === col.id);
               return (
                 <div key={col.id}
                   onDragOver={e => e.preventDefault()}
                   onDrop={() => onDrop(col.id)}
-                  style={{ flex: 1, minWidth: 220, display: 'flex', flexDirection: 'column' }}>
+                  style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
                   {/* Column header */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
                     <div style={{ width: 10, height: 10, borderRadius: '50%', background: col.color }} />
@@ -336,10 +338,10 @@ export default function TasksPage() {
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            style={{ width: '100%', maxWidth: 760, maxHeight: '88vh', overflowY: 'auto', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, padding: 20 }}
+            style={{ width: '100%', maxWidth: 760, maxHeight: isMobile ? 'calc(100vh - 28px)' : '88vh', overflowY: 'auto', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, padding: isMobile ? 14 : 20 }}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 14, marginBottom: 14 }}>
-              <div>
+            <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', gap: 14, marginBottom: 14 }}>
+              <div style={{ minWidth: 0 }}>
                 <div style={{ color: '#fff', fontWeight: 700, fontSize: 18 }}>{selected.title}</div>
                 <div style={{ color: 'var(--text-muted)', fontSize: 12, marginTop: 4 }}>
                   {selected.project || 'General'} / {selected.priority} / {selected.status}

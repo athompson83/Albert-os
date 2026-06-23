@@ -13,11 +13,11 @@ export default function AppsPage() {
   return (
     <div>
       <TopBar title="Connected Apps" />
-      <div style={{ padding: 24 }}>
+      <div style={{ padding: 'clamp(14px, 5vw, 24px)' }}>
         <p style={{ color: 'var(--text-muted)', fontSize: 14, margin: '0 0 24px' }}>
           {apps.filter(a => a.connected).length} of {apps.length} apps connected
         </p>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 14 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 280px), 1fr))', gap: 14 }}>
           {apps.map(app => (
             <div key={app.id} style={{ background: 'var(--surface)', border: `1px solid ${app.connected ? 'rgba(16,185,129,0.3)' : 'var(--border)'}`, borderRadius: 10, padding: 20 }}>
               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 12 }}>

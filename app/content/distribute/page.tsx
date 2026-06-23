@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import TopBar from '@/components/TopBar';
 import { AlertCircle, CheckCircle2, Clock, Globe, Zap, Send, ChevronDown, ChevronUp } from 'lucide-react';
+import useIsMobile from '@/components/useIsMobile';
 
 const PLATFORMS = [
   {
@@ -63,13 +64,14 @@ const WORKFLOW_STEPS = [
 ];
 
 export default function DistributePage() {
+  const isMobile = useIsMobile();
   const [expanded, setExpanded] = useState<string | null>(null);
   const [connecting, setConnecting] = useState<string | null>(null);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <TopBar title="Distribution Hub" />
-      <div style={{ flex: 1, overflowY: 'auto', padding: '24px', maxWidth: 1000, width: '100%', margin: '0 auto' }}>
+      <div style={{ flex: 1, overflowY: 'auto', padding: isMobile ? 14 : 24, maxWidth: 1000, width: '100%', margin: '0 auto' }}>
 
         {/* Header */}
         <div style={{ marginBottom: 24 }}>
@@ -113,10 +115,10 @@ export default function DistributePage() {
             return (
               <div key={p.name} style={{ background: 'var(--surface)', border: `1px solid ${isExpanded ? p.color + '44' : 'var(--border)'}`, borderRadius: 12, overflow: 'hidden', transition: 'border-color 0.2s' }}>
                 {/* Card header */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 18px', cursor: 'pointer' }} onClick={() => setExpanded(isExpanded ? null : p.name)}>
+                <div style={{ display: 'flex', alignItems: isMobile ? 'flex-start' : 'center', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? 8 : 14, padding: isMobile ? '14px' : '14px 18px', cursor: 'pointer' }} onClick={() => setExpanded(isExpanded ? null : p.name)}>
                   <div style={{ width: 10, height: 10, borderRadius: '50%', background: p.color, flexShrink: 0 }} />
-                  <div style={{ flex: 1 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div style={{ flex: 1, width: '100%' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                       <span style={{ fontSize: 15, fontWeight: 600 }}>{p.name}</span>
                       {p.apiAvailable ? (
                         <span style={{ fontSize: 10, background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.3)', color: '#10b981', borderRadius: 20, padding: '1px 8px' }}>API Available</span>
@@ -131,7 +133,7 @@ export default function DistributePage() {
                   </span>
                   <button
                     onClick={e => { e.stopPropagation(); setConnecting(p.name); }}
-                    style={{ background: `${p.color}22`, border: `1px solid ${p.color}44`, borderRadius: 6, padding: '6px 14px', color: p.color, cursor: 'pointer', fontSize: 12, fontWeight: 600, flexShrink: 0 }}
+                    style={{ background: `${p.color}22`, border: `1px solid ${p.color}44`, borderRadius: 6, padding: '6px 14px', color: p.color, cursor: 'pointer', fontSize: 12, fontWeight: 600, flexShrink: 0, width: isMobile ? '100%' : 'auto' }}
                   >
                     {connecting === p.name ? 'Opening...' : 'Connect'}
                   </button>
@@ -141,7 +143,7 @@ export default function DistributePage() {
                 {/* Expanded details */}
                 {isExpanded && (
                   <div style={{ padding: '0 18px 16px', borderTop: '1px solid var(--border)' }}>
-                    <div style={{ paddingTop: 14, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                    <div style={{ paddingTop: 14, display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 16 }}>
                       <div>
                         <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 8, fontWeight: 600 }}>FEATURES</div>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>

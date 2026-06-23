@@ -15,9 +15,11 @@ export default function MainWrapper({ children }: { children: React.ReactNode })
     <main style={{
       marginLeft: isMobile ? 0 : 220,
       minHeight: '100vh',
+      minWidth: 0,
       paddingBottom: 'env(safe-area-inset-bottom, 0px)',
       background: 'var(--background)',
       transition: 'margin-left 0.2s',
+      overflowX: 'hidden',
     }}>
       {children}
     </main>

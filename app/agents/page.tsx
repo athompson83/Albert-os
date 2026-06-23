@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import TopBar from '@/components/TopBar';
+import useIsMobile from '@/components/useIsMobile';
 
 type Agent = {
   id: string;
@@ -66,6 +67,7 @@ function Avatar({ agent }: { agent: Agent }) {
 }
 
 export default function AgentsPage() {
+  const isMobile = useIsMobile();
   const [agents, setAgents] = useState<Agent[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -222,8 +224,8 @@ export default function AgentsPage() {
     <div style={{ minHeight: '100vh', background: 'var(--surface)', color: 'var(--text)' }}>
       <TopBar title="Agents" />
 
-      <div style={{ padding: 24 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+      <div style={{ padding: isMobile ? 14 : 24 }}>
+        <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'stretch' : 'center', gap: 12, marginBottom: 20 }}>
           <div style={{ color: 'var(--text-muted)', fontSize: 14 }}>Manage all registered agents dynamically.</div>
           <button
             onClick={openCreate}
@@ -257,7 +259,7 @@ export default function AgentsPage() {
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
+              gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(260px, 1fr))',
               gap: 16,
             }}
           >
@@ -332,7 +334,7 @@ export default function AgentsPage() {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            padding: 16,
+            padding: isMobile ? 14 : 16,
             zIndex: 120,
           }}
           onClick={() => {
@@ -343,6 +345,8 @@ export default function AgentsPage() {
             style={{
               width: '100%',
               maxWidth: 700,
+              maxHeight: isMobile ? 'calc(100vh - 32px)' : '90vh',
+              overflowY: 'auto',
               background: 'var(--surface)',
               border: '1px solid var(--border)',
               borderRadius: 14,
@@ -352,7 +356,7 @@ export default function AgentsPage() {
           >
             <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 12 }}>{modalTitle}</div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 10, marginBottom: 10 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, minmax(0, 1fr))', gap: 10, marginBottom: 10 }}>
               <label style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 13 }}>
                 Name
                 <input
@@ -397,7 +401,7 @@ export default function AgentsPage() {
               />
             </label>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 10, marginBottom: 10 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, minmax(0, 1fr))', gap: 10, marginBottom: 10 }}>
               <label style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 13 }}>
                 Color
                 <input
@@ -428,7 +432,7 @@ export default function AgentsPage() {
               />
             </label>
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, flexWrap: 'wrap' }}>
               <button
                 onClick={() => setOpen(false)}
                 disabled={saving}

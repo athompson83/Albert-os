@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import TopBar from '@/components/TopBar';
+import useIsMobile from '@/components/useIsMobile';
 
 type ProgressUpdate = {
   id: string;
@@ -44,6 +45,7 @@ function formatTime(value: string) {
 }
 
 export default function ProgressPage() {
+  const isMobile = useIsMobile();
   const [snapshot, setSnapshot] = useState<ProgressSnapshot | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -73,17 +75,17 @@ export default function ProgressPage() {
   }, [snapshot, filter]);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: 'var(--background)' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: 'var(--background)' }}>
       <TopBar title="Progress" />
-      <div style={{ flex: 1, overflowY: 'auto', padding: 24 }}>
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, marginBottom: 22 }}>
-          <div>
+      <div style={{ flex: 1, overflowY: 'auto', padding: isMobile ? 14 : 24, minWidth: 0 }}>
+        <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'stretch' : 'flex-start', justifyContent: 'space-between', gap: 16, marginBottom: 22 }}>
+          <div style={{ minWidth: 0 }}>
             <h2 style={{ margin: 0, fontSize: 22, color: '#fff' }}>Hermes Progress Feed</h2>
             <p style={{ margin: '6px 0 0', color: 'var(--text-muted)', fontSize: 13 }}>
               GitHub commits, status reports, and blockers for {snapshot?.repo || 'athompson83/Albert-os'}.
             </p>
           </div>
-          <button onClick={load} disabled={loading} style={{ background: 'var(--primary)', border: 'none', borderRadius: 8, padding: '9px 16px', color: '#fff', cursor: 'pointer', opacity: loading ? 0.6 : 1 }}>
+          <button onClick={load} disabled={loading} style={{ background: 'var(--primary)', border: 'none', borderRadius: 8, padding: '9px 16px', color: '#fff', cursor: 'pointer', opacity: loading ? 0.6 : 1, width: isMobile ? '100%' : 'auto' }}>
             {loading ? 'Refreshing...' : 'Refresh'}
           </button>
         </div>
@@ -94,24 +96,24 @@ export default function ProgressPage() {
           </div>
         )}
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(140px, 1fr))', gap: 12, marginBottom: 18 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, minmax(0, 1fr))' : 'repeat(4, minmax(140px, 1fr))', gap: isMobile ? 8 : 12, marginBottom: 18 }}>
           {[
             ['GitHub updates', snapshot?.counts.github ?? 0, '#10b981'],
             ['Report items', snapshot?.counts.reports ?? 0, '#6366f1'],
             ['Status items', snapshot?.counts.status ?? 0, '#f59e0b'],
             ['Blockers', snapshot?.counts.blockers ?? 0, '#ef4444'],
           ].map(([label, value, color]) => (
-            <div key={String(label)} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: 16 }}>
-              <div style={{ fontSize: 26, fontWeight: 700, color: String(color) }}>{String(value)}</div>
+            <div key={String(label)} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: isMobile ? 12 : 16, minWidth: 0 }}>
+              <div style={{ fontSize: isMobile ? 22 : 26, fontWeight: 700, color: String(color) }}>{String(value)}</div>
               <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>{String(label)}</div>
             </div>
           ))}
         </div>
 
         {snapshot?.capabilities && (
-          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: 18, marginBottom: 18 }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 12 }}>
-              <div>
+          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: isMobile ? 14 : 18, marginBottom: 18 }}>
+            <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'flex-start' : 'center', justifyContent: 'space-between', gap: 12, marginBottom: 12 }}>
+              <div style={{ minWidth: 0 }}>
                 <h3 style={{ margin: 0, color: '#fff', fontSize: 15 }}>Hermes Capability Readiness</h3>
                 <div style={{ color: 'var(--text-muted)', fontSize: 12, marginTop: 3 }}>
                   {snapshot.capabilities.summary.ready} of {snapshot.capabilities.summary.total} capabilities ready.
@@ -119,7 +121,7 @@ export default function ProgressPage() {
               </div>
               <a href="/capabilities" style={{ color: '#a5b4fc', fontSize: 13, textDecoration: 'none' }}>Open catalog</a>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 8 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(220px, 1fr))', gap: 8 }}>
               {snapshot.capabilities.readiness.slice(0, 6).map(capability => {
                 const color = capability.status === 'ready' ? '#10b981' : capability.status === 'blocked' ? '#ef4444' : '#f59e0b';
                 return (
@@ -139,11 +141,11 @@ export default function ProgressPage() {
         )}
 
         {snapshot?.latest && (
-          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: 18, marginBottom: 18 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: isMobile ? 14 : 18, marginBottom: 18 }}>
+            <div style={{ display: 'flex', alignItems: isMobile ? 'flex-start' : 'center', gap: 8, marginBottom: 8, flexWrap: 'wrap' }}>
               <span style={{ width: 8, height: 8, borderRadius: 999, background: sourceColor[snapshot.latest.source] }} />
               <span style={{ fontSize: 12, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 0.4 }}>Latest update</span>
-              <span style={{ fontSize: 12, color: 'var(--text-muted)', marginLeft: 'auto' }}>{formatTime(snapshot.latest.timestamp)}</span>
+              <span style={{ fontSize: 12, color: 'var(--text-muted)', marginLeft: isMobile ? 0 : 'auto', width: isMobile ? '100%' : 'auto' }}>{formatTime(snapshot.latest.timestamp)}</span>
             </div>
             <div style={{ fontSize: 16, color: '#fff', fontWeight: 650 }}>{snapshot.latest.title}</div>
             {snapshot.latest.url && (
@@ -154,8 +156,8 @@ export default function ProgressPage() {
           </div>
         )}
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 340px', gap: 18 }}>
-          <section>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'minmax(0, 1fr) 340px', gap: 18 }}>
+          <section style={{ minWidth: 0 }}>
             <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
               {(['all', 'github', 'report', 'status'] as const).map(item => (
                 <button
@@ -180,13 +182,13 @@ export default function ProgressPage() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {loading && <div style={{ color: 'var(--text-muted)', padding: 32, textAlign: 'center' }}>Loading progress...</div>}
               {!loading && updates.map(update => (
-                <div key={update.id} style={{ display: 'grid', gridTemplateColumns: '120px minmax(0, 1fr)', gap: 14, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: 14 }}>
-                  <div>
+                <div key={update.id} style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '120px minmax(0, 1fr)', gap: isMobile ? 8 : 14, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: isMobile ? 12 : 14, minWidth: 0 }}>
+                  <div style={{ minWidth: 0 }}>
                     <div style={{ fontSize: 11, color: sourceColor[update.source], fontWeight: 700, textTransform: 'uppercase' }}>{update.source}</div>
                     <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 5 }}>{formatTime(update.timestamp)}</div>
                     {update.sha && <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 5 }}>{update.sha}</div>}
                   </div>
-                  <div>
+                  <div style={{ minWidth: 0 }}>
                     <div style={{ fontSize: 14, color: '#fff', fontWeight: 600, lineHeight: 1.35 }}>{update.title}</div>
                     {update.author && <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>By {update.author}</div>}
                     {update.url && <a href={update.url} target="_blank" rel="noreferrer" style={{ color: '#a5b4fc', fontSize: 12, display: 'inline-block', marginTop: 8 }}>View commit</a>}
@@ -196,7 +198,7 @@ export default function ProgressPage() {
             </div>
           </section>
 
-          <aside style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: 16, alignSelf: 'start' }}>
+          <aside style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: isMobile ? 14 : 16, alignSelf: 'start', minWidth: 0 }}>
             <h3 style={{ margin: '0 0 12px', color: '#fff', fontSize: 15 }}>Needs Adam</h3>
             {(snapshot?.blockers || []).length === 0 && <div style={{ color: 'var(--text-muted)', fontSize: 13 }}>No blockers listed.</div>}
             {(snapshot?.blockers || []).map(item => (

@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import TopBar from '@/components/TopBar';
 import Link from 'next/link';
+import useIsMobile from '@/components/useIsMobile';
 
 type PendingItem = {
   id: string;
@@ -53,6 +54,7 @@ const TAG_COLOR: Record<string, string> = {
 
 export default function Dashboard() {
   const router = useRouter();
+  const isMobile = useIsMobile();
   const [status, setStatus] = useState<SystemStatus | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [time, setTime] = useState('');
@@ -144,7 +146,7 @@ export default function Dashboard() {
   return (
     <div>
       <TopBar title="Dashboard" />
-      <div style={{ padding: 24, maxWidth: 1100, margin: '0 auto' }}>
+      <div style={{ padding: isMobile ? 14 : 24, maxWidth: 1100, margin: '0 auto', minWidth: 0 }}>
 
         {/* Welcome */}
         <div style={{ marginBottom: 28 }}>
@@ -153,19 +155,19 @@ export default function Dashboard() {
         </div>
 
         {/* Stat Cards */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, minmax(0, 1fr))' : 'repeat(4, 1fr)', gap: isMobile ? 8 : 16, marginBottom: 24 }}>
           {statCards.map(s => {
             const inner = (
               <div style={{
                 background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12,
-                padding: '18px 20px', cursor: s.href ? 'pointer' : 'default',
+                padding: isMobile ? '14px 12px' : '18px 20px', cursor: s.href ? 'pointer' : 'default',
                 transition: 'border-color 0.15s, transform 0.1s',
               }}
                 onMouseEnter={e => { if (s.href) (e.currentTarget as HTMLDivElement).style.borderColor = s.color; }}
                 onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.borderColor = 'var(--border)'; }}
               >
                 <div style={{ fontSize: 22, marginBottom: 8 }}>{s.emoji}</div>
-                <div style={{ fontSize: 28, fontWeight: 700, color: s.color }}>{String(s.value)}</div>
+                <div style={{ fontSize: isMobile ? 22 : 28, fontWeight: 700, color: s.color }}>{String(s.value)}</div>
                 <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>{s.label}</div>
               </div>
             );
@@ -175,7 +177,7 @@ export default function Dashboard() {
           })}
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 24 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 16, marginBottom: 24 }}>
 
           {/* Needs Attention */}
           <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 20 }}>
@@ -315,7 +317,7 @@ export default function Dashboard() {
         </div>
 
         {/* Session Summary + Quick Links */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 16 }}>
 
           {/* Session summary */}
           <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 20 }}>
@@ -334,7 +336,7 @@ export default function Dashboard() {
           {/* Quick links */}
           <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 20 }}>
             <h3 style={{ margin: '0 0 14px', fontSize: 14, fontWeight: 600, color: '#fff' }}>Quick Access</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 8 }}>
               {quickLinks.map(l => (
                 <Link key={l.href} href={l.href} style={{ textDecoration: 'none' }}>
                   <div

@@ -10,14 +10,15 @@ export default function TopBar({ title }: { title: string }) {
       alignItems: 'center',
       justifyContent: 'space-between',
       padding: '0 16px',
-      paddingLeft: 56,
+      paddingLeft: 'max(56px, calc(16px + env(safe-area-inset-left, 0px)))',
+      paddingRight: 'calc(16px + env(safe-area-inset-right, 0px))',
       paddingTop: 'env(safe-area-inset-top, 0px)',
       minHeight: 'calc(56px + env(safe-area-inset-top, 0px))',
       position: 'sticky',
       top: 0,
       zIndex: 40,
     }}>
-      <h1 style={{ fontSize: 17, fontWeight: 600, color: '#fff', margin: 0 }}>{title}</h1>
+      <h1 style={{ fontSize: 17, fontWeight: 600, color: '#fff', margin: 0, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{title}</h1>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
         <NotificationBell />
       </div>
