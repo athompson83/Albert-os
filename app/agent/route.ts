@@ -1,13 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createGatewayReply, recordChat } from '@/lib/hermes-gateway';
+import { buildHermesManifest } from '@/lib/hermes-manifest';
 
 export const runtime = 'nodejs';
 
 export async function GET() {
+  const manifest = buildHermesManifest();
   return NextResponse.json({
     ok: true,
     service: 'Albert Hermes HTTP API',
-    endpoints: ['/agent', '/hermes/agents', '/hermes/tasks', '/hermes/workflows', '/hermes/chats', '/hermes/capabilities', '/hermes/credentials', '/hermes/products', '/hermes/events'],
+    endpoints: Object.values(manifest.endpoints),
+    manifest: manifest.endpoints.manifest,
+    health: manifest.endpoints.health,
   });
 }
 

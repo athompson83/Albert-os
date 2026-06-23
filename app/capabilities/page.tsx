@@ -53,6 +53,9 @@ function capabilityHref(capability: Capability) {
   const endpoint = capability.endpoint || '';
   if (endpoint.includes('/progress')) return '/progress';
   if (endpoint.includes('/tasks')) return '/tasks';
+  if (endpoint.includes('/products')) return '/products';
+  if (endpoint.includes('/revenue')) return '/revenue';
+  if (endpoint.includes('/credentials')) return '/tasks';
   if (endpoint.includes('/workflows') || capability.workflowId) return '/workflows';
   if (endpoint.includes('/agents')) return '/agents';
   if (endpoint === '/content') return '/content';

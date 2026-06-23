@@ -27,11 +27,30 @@ type Task = {
   archivedAt?: string;
 };
 
+type Product = {
+  id: string;
+  title: string;
+  status: string;
+  price?: string;
+};
+
+type RevenueSnapshot = {
+  revenue: { mrr: number; arr: number; total_earned: number };
+  subscribers: { free: number; paid: number };
+  leadmagnets: unknown[];
+};
+
 interface SystemStatus {
   proxy: string;
+  hermes?: {
+    connected: boolean;
+    lastUpdatedAt: string;
+  };
   agents: number;
   workflows: number;
   activeWorkflows: number;
+  products?: number;
+  credentialsRequested?: number;
   session: {
     date: string;
     summary: string[];
@@ -57,6 +76,8 @@ export default function Dashboard() {
   const isMobile = useIsMobile();
   const [status, setStatus] = useState<SystemStatus | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [revenue, setRevenue] = useState<RevenueSnapshot | null>(null);
   const [time, setTime] = useState('');
   const [date, setDate] = useState('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -90,6 +111,8 @@ export default function Dashboard() {
       const active = (d.tasks || []).filter((t: Task) => !t.archivedAt && t.status !== 'done');
       setTasks(active.slice(0, 5));
     }).catch(() => {});
+    fetch('/api/products').then(r => r.json()).then(d => setProducts((d.products || []).filter((p: Product) => p.status !== 'removed'))).catch(() => {});
+    fetch('/api/revenue').then(r => r.json()).then(setRevenue).catch(() => {});
   }, []);
 
   const dismiss = useCallback((id: string) => {
@@ -127,21 +150,24 @@ export default function Dashboard() {
 
   const statCards = [
     { label: 'System', value: status?.proxy === 'online' ? 'Online' : status ? 'Offline' : '…', color: status?.proxy === 'online' ? '#10b981' : '#ef4444', emoji: status?.proxy === 'online' ? '🟢' : '🔴', href: '/progress' },
-    { label: 'AI Agents', value: status?.agents ?? '…', color: '#6366f1', emoji: '🤖', href: '/agents' },
-    { label: 'Workflows', value: status?.workflows ?? '…', color: '#8b5cf6', emoji: '⚡', href: '/workflows' },
-    { label: 'Active', value: status?.activeWorkflows ?? '…', color: '#f59e0b', emoji: '▶️', href: '/workflows' },
+    { label: 'Adam Tasks', value: tasks.length || status?.session.pending.length || '0', color: '#f59e0b', emoji: '✅', href: '/tasks' },
+    { label: 'Products', value: products.length || status?.products || '0', color: '#a5b4fc', emoji: '📦', href: '/products' },
+    { label: 'MRR', value: `$${revenue?.revenue.mrr || 0}`, color: '#10b981', emoji: '💵', href: '/revenue' },
   ];
 
   const quickLinks = [
     { href: '/chat', label: 'Chat', emoji: '💬', desc: 'Talk to Albert' },
-    { href: '/agents', label: 'Agents', emoji: '🤖', desc: 'Manage specialists' },
-    { href: '/workflows', label: 'Workflows', emoji: '⚡', desc: 'Automate tasks' },
+    { href: '/revenue', label: 'Revenue', emoji: '💵', desc: 'Money dashboard' },
     { href: '/tasks', label: 'Tasks', emoji: '✅', desc: 'Task board' },
     { href: '/products', label: 'Products', emoji: '📦', desc: 'Review output' },
-    { href: '/files', label: 'Files', emoji: '📁', desc: 'Browse uploads' },
+    { href: '/content', label: 'Content', emoji: '📚', desc: 'Create assets' },
+    { href: '/workflows', label: 'Workflows', emoji: '⚡', desc: 'Automate tasks' },
+    { href: '/progress', label: 'Progress', emoji: '📈', desc: 'Hermes feed' },
   ];
 
   const visiblePending = (status?.session.pending || []).filter(p => !dismissed.includes(p.id));
+  const productsForReview = products.filter(product => product.status === 'ready' || product.status === 'needs_improvement').slice(0, 4);
+  const hermesReady = Boolean(status?.hermes?.connected);
 
   return (
     <div>
@@ -316,6 +342,47 @@ export default function Dashboard() {
           </div>
         </div>
 
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.2fr 0.8fr', gap: 16, marginBottom: 24 }}>
+          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 20 }}>
+            <h3 style={{ margin: '0 0 14px', fontSize: 14, fontWeight: 600, color: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span>💵 Revenue Engine</span>
+              <Link href="/revenue" style={{ fontSize: 12, color: '#a5b4fc', textDecoration: 'none' }}>Open →</Link>
+            </h3>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, minmax(0, 1fr))', gap: 8, marginBottom: 12 }}>
+              <div style={miniMetricStyle}><strong>${revenue?.revenue.mrr || 0}</strong><span>MRR</span></div>
+              <div style={miniMetricStyle}><strong>{revenue?.subscribers.free || 0}</strong><span>Free subs</span></div>
+              <div style={miniMetricStyle}><strong>{revenue?.leadmagnets.length || 0}</strong><span>Lead magnets</span></div>
+            </div>
+            <div style={{ display: 'grid', gap: 8 }}>
+              {productsForReview.map(product => (
+                <Link key={product.id} href="/products" style={{ textDecoration: 'none' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 8, padding: '9px 12px' }}>
+                    <span style={{ color: 'var(--text)', fontSize: 13, fontWeight: 600 }}>{product.title}</span>
+                    <span style={{ color: product.status === 'needs_improvement' ? '#f59e0b' : '#10b981', fontSize: 11, whiteSpace: 'nowrap' }}>{product.status.replace('_', ' ')}</span>
+                  </div>
+                </Link>
+              ))}
+              {productsForReview.length === 0 && <div style={{ color: 'var(--text-muted)', fontSize: 13 }}>No products waiting for review.</div>}
+            </div>
+          </div>
+
+          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 20 }}>
+            <h3 style={{ margin: '0 0 14px', fontSize: 14, fontWeight: 600, color: '#fff' }}>⚡ Hermes Connection</h3>
+            {[
+              ['Gateway', hermesReady ? 'Connected' : 'Offline', hermesReady],
+              ['Credentials', `${status?.credentialsRequested || 0} open`, !(status?.credentialsRequested || 0)],
+              ['Agents', String(status?.agents ?? 0), Boolean(status?.agents)],
+              ['Workflows', `${status?.activeWorkflows ?? 0} active`, Boolean(status?.activeWorkflows)],
+            ].map(([label, value, ok]) => (
+              <div key={String(label)} style={{ display: 'flex', justifyContent: 'space-between', gap: 10, padding: '8px 0', borderTop: '1px solid var(--border)' }}>
+                <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>{label}</span>
+                <span style={{ color: ok ? '#10b981' : '#f59e0b', fontSize: 12, fontWeight: 650 }}>{value}</span>
+              </div>
+            ))}
+            <Link href="/hermes" style={{ display: 'inline-block', marginTop: 10, color: '#a5b4fc', fontSize: 12, textDecoration: 'none' }}>Open manifest →</Link>
+          </div>
+        </div>
+
         {/* Session Summary + Quick Links */}
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 16 }}>
 
@@ -373,3 +440,15 @@ function actionBtn(color: string, muted = false): React.CSSProperties {
     fontWeight: 500,
   };
 }
+
+const miniMetricStyle: React.CSSProperties = {
+  background: 'var(--surface-2)',
+  border: '1px solid var(--border)',
+  borderRadius: 8,
+  padding: '10px 12px',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 2,
+  color: 'var(--text-muted)',
+  fontSize: 11,
+};

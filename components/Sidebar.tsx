@@ -5,23 +5,27 @@ import { useState, useEffect } from 'react';
 import {
   LayoutDashboard, MessageSquare, FolderKanban,
   Users, GitBranch, CheckSquare, Plug, FileText, Terminal, ScrollText,
-  Newspaper, Menu, X, Scissors, Monitor, BookOpen, Activity, Sparkles, ShoppingBag
+  Newspaper, Menu, X, Scissors, Monitor, BookOpen, Activity, Sparkles, ShoppingBag, DollarSign
 } from 'lucide-react';
 
-const nav = [
+const primaryNav = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/chat', label: 'Chat', icon: MessageSquare },
-  { href: '/screen', label: 'Screen Share', icon: Monitor },
-  { href: '/clipping', label: 'Clipping', icon: Scissors },
+  { href: '/tasks', label: 'Tasks', icon: CheckSquare },
+  { href: '/revenue', label: 'Revenue', icon: DollarSign },
+  { href: '/products', label: 'Products', icon: ShoppingBag },
+  { href: '/progress', label: 'Progress', icon: Activity },
+];
+
+const toolNav = [
   { href: '/content', label: 'Content', icon: BookOpen },
+  { href: '/clipping', label: 'Clipping', icon: Scissors },
+  { href: '/newsletter', label: 'Newsletter', icon: Newspaper },
+  { href: '/workflows', label: 'Workflows', icon: GitBranch },
   { href: '/agents', label: 'Agents', icon: Users },
   { href: '/capabilities', label: 'Capabilities', icon: Sparkles },
-  { href: '/workflows', label: 'Workflows', icon: GitBranch },
-  { href: '/progress', label: 'Progress', icon: Activity },
-  { href: '/products', label: 'Products', icon: ShoppingBag },
-  { href: '/newsletter', label: 'Newsletter', icon: Newspaper },
+  { href: '/screen', label: 'Screen Share', icon: Monitor },
   { href: '/projects', label: 'Projects', icon: FolderKanban },
-  { href: '/tasks', label: 'Tasks', icon: CheckSquare },
   { href: '/apps', label: 'Apps', icon: Plug },
   { href: '/files', label: 'Files', icon: FileText },
   { href: '/vibe', label: 'Vibe Coder', icon: Terminal },
@@ -32,6 +36,7 @@ export default function Sidebar() {
   const path = usePathname();
   const [open, setOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const toolsActive = toolNav.some(item => path === item.href || path.startsWith(`${item.href}/`));
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
@@ -83,8 +88,8 @@ export default function Sidebar() {
 
           {/* Nav */}
           <nav style={{ flex: 1, padding: '12px 8px', overflow: 'auto' }}>
-            {nav.map(({ href, label, icon: Icon }) => {
-              const active = path === href;
+            {primaryNav.map(({ href, label, icon: Icon }) => {
+              const active = path === href || (href !== '/' && path.startsWith(`${href}/`));
               return (
                 <Link key={href} href={href} onClick={handleNav} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 10px', borderRadius: 7, marginBottom: 2, textDecoration: 'none', background: active ? 'rgba(99,102,241,0.15)' : 'transparent', color: active ? '#a5b4fc' : 'var(--text-muted)', fontWeight: active ? 600 : 400, fontSize: 15, transition: 'all 0.15s' }}>
                   <Icon size={18} />
@@ -92,6 +97,22 @@ export default function Sidebar() {
                 </Link>
               );
             })}
+            <details open={toolsActive} style={{ marginTop: 10 }}>
+              <summary style={{ listStyle: 'none', cursor: 'pointer', padding: '8px 10px', color: toolsActive ? '#a5b4fc' : 'var(--text-muted)', fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                Tools
+              </summary>
+              <div style={{ paddingTop: 4 }}>
+                {toolNav.map(({ href, label, icon: Icon }) => {
+                  const active = path === href || path.startsWith(`${href}/`);
+                  return (
+                    <Link key={href} href={href} onClick={handleNav} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 10px', borderRadius: 7, marginBottom: 2, textDecoration: 'none', background: active ? 'rgba(99,102,241,0.15)' : 'transparent', color: active ? '#a5b4fc' : 'var(--text-muted)', fontWeight: active ? 600 : 400, fontSize: 13, transition: 'all 0.15s' }}>
+                      <Icon size={16} />
+                      {label}
+                    </Link>
+                  );
+                })}
+              </div>
+            </details>
           </nav>
 
           {/* Footer */}
