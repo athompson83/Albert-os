@@ -27,6 +27,7 @@ export function buildHermesManifest() {
     endpoints: {
       chat: '/agent',
       manifest: '/hermes',
+      bootstrap: '/hermes/bootstrap',
       health: '/hermes/health',
       agents: '/hermes/agents',
       tasks: '/hermes/tasks',
@@ -37,6 +38,7 @@ export function buildHermesManifest() {
       credentials: '/hermes/credentials',
       products: '/hermes/products',
       events: '/hermes/events',
+      inbox: '/hermes/inbox',
       revenue: '/api/revenue',
       progress: '/api/progress',
       status: '/api/status',
@@ -47,6 +49,7 @@ export function buildHermesManifest() {
       productUpdate: { method: 'PATCH', endpoint: '/hermes/products', required: ['id'] },
       workflowCreate: { method: 'POST', endpoint: '/hermes/workflows', required: ['name'] },
       agentCreate: { method: 'POST', endpoint: '/hermes/agents', required: ['name'] },
+      inboxUpdate: { method: 'POST', endpoint: '/hermes/inbox', required: ['title'] },
     },
     capabilities: getCapabilities(),
     recentEvents: state.events.slice(0, 10),

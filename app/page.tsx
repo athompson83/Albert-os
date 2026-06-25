@@ -45,6 +45,9 @@ interface SystemStatus {
   hermes?: {
     connected: boolean;
     lastUpdatedAt: string;
+    bootstrap?: string;
+    inbox?: string;
+    events?: Array<{ id: string; title: string; detail: string; timestamp: string; type: string }>;
   };
   agents: number;
   workflows: number;
@@ -169,6 +172,7 @@ export default function Dashboard() {
   const visiblePending = (status?.session.pending || []).filter(p => !dismissed.includes(p.id));
   const productsForReview = products.filter(product => product.status === 'ready' || product.status === 'needs_improvement').slice(0, 4);
   const hermesReady = Boolean(status?.hermes?.connected);
+  const hermesEvents = status?.hermes?.events || [];
 
   return (
     <div>
@@ -381,6 +385,44 @@ export default function Dashboard() {
               </div>
             ))}
             <Link href="/hermes" style={{ display: 'inline-block', marginTop: 10, color: '#a5b4fc', fontSize: 12, textDecoration: 'none' }}>Open manifest →</Link>
+          </div>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '0.9fr 1.1fr', gap: 16, marginBottom: 24 }}>
+          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 20 }}>
+            <h3 style={{ margin: '0 0 14px', fontSize: 14, fontWeight: 600, color: '#fff' }}>Hermes Handoff</h3>
+            {[
+              ['Read first', status?.hermes?.bootstrap || '/hermes/bootstrap'],
+              ['Send updates', status?.hermes?.inbox || '/hermes/inbox'],
+              ['Credentials', '/credentials'],
+              ['Product review', '/products'],
+            ].map(([label, value]) => (
+              <div key={label} style={{ display: 'grid', gridTemplateColumns: '96px minmax(0, 1fr)', gap: 10, padding: '8px 0', borderTop: '1px solid var(--border)' }}>
+                <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>{label}</span>
+                <span style={{ color: '#e5e7eb', fontSize: 12, overflowWrap: 'anywhere' }}>{value}</span>
+              </div>
+            ))}
+            <div style={{ display: 'flex', gap: 10, marginTop: 12, flexWrap: 'wrap' }}>
+              <Link href="/hermes/bootstrap" style={{ color: '#a5b4fc', fontSize: 12, textDecoration: 'none' }}>Bootstrap packet</Link>
+              <Link href="/hermes" style={{ color: '#a5b4fc', fontSize: 12, textDecoration: 'none' }}>Manifest</Link>
+            </div>
+          </div>
+
+          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 20 }}>
+            <h3 style={{ margin: '0 0 14px', fontSize: 14, fontWeight: 600, color: '#fff', display: 'flex', justifyContent: 'space-between' }}>
+              <span>Hermes Workstream</span>
+              <Link href="/progress" style={{ fontSize: 12, color: '#a5b4fc', textDecoration: 'none' }}>Progress</Link>
+            </h3>
+            {hermesEvents.length === 0 && <div style={{ color: 'var(--text-muted)', fontSize: 13 }}>No Hermes events yet. The inbox is ready.</div>}
+            {hermesEvents.map(event => (
+              <div key={event.id} style={{ borderTop: '1px solid var(--border)', padding: '10px 0' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10 }}>
+                  <span style={{ color: '#fff', fontSize: 13, fontWeight: 650 }}>{event.title}</span>
+                  <span style={{ color: '#6ee7b7', fontSize: 11, whiteSpace: 'nowrap' }}>{event.type.replace('_', ' ')}</span>
+                </div>
+                <div style={{ color: 'var(--text-muted)', fontSize: 12, lineHeight: 1.45, marginTop: 4 }}>{event.detail}</div>
+              </div>
+            ))}
           </div>
         </div>
 

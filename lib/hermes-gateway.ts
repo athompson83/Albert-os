@@ -70,7 +70,7 @@ export type HermesProduct = {
 
 export type HermesEvent = {
   id: string;
-  type: 'task_updated' | 'credential_updated' | 'product_updated' | 'status';
+  type: 'task_updated' | 'credential_updated' | 'product_updated' | 'status' | 'hermes_inbox';
   title: string;
   detail: string;
   timestamp: string;
@@ -796,4 +796,30 @@ export function upsertProduct(body: Partial<HermesProduct> & { comment?: string;
     entityId: product.id,
   });
   return product;
+}
+
+export function ingestHermesUpdate(body: Record<string, unknown>) {
+  const kind = String(body.kind || body.type || 'status');
+  const title = String(body.title || body.summary || 'Hermes update');
+  const detail = String(body.detail || body.message || body.description || 'Hermes sent an update to Albert OS.');
+
+  if (kind === 'task' && typeof body.task === 'object' && body.task) {
+    return { kind, task: upsertTask(body.task as Partial<HermesTask>) };
+  }
+
+  if (kind === 'product' && typeof body.product === 'object' && body.product) {
+    return { kind, product: upsertProduct(body.product as Partial<HermesProduct>) };
+  }
+
+  if (kind === 'credential' && typeof body.credential === 'object' && body.credential) {
+    return { kind, credential: upsertCredential(body.credential as Partial<HermesCredential> & { value?: string }) };
+  }
+
+  const event = recordHermesEvent({
+    type: 'hermes_inbox',
+    title,
+    detail,
+    entityId: typeof body.entityId === 'string' ? body.entityId : undefined,
+  });
+  return { kind, event };
 }
