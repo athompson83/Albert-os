@@ -1,13 +1,19 @@
 import { NextResponse } from 'next/server';
-import { getHermesState } from '@/lib/hermes-gateway';
+import { getHermesRuntimeConfig, getHermesState } from '@/lib/hermes-gateway';
 
 export const runtime = 'nodejs';
 
 export async function GET() {
   const state = getHermesState();
+  const stripeKey = process.env.STRIPE_SECRET_KEY || '';
 
   return NextResponse.json({
-    configuredGatewayUrl: process.env.ALBERT_GATEWAY_URL || null,
+    hermes: getHermesRuntimeConfig(),
+    stripe: {
+      hasSecretKey: Boolean(stripeKey),
+      keyMode: stripeKey.startsWith('sk_live_') ? 'live' : stripeKey.startsWith('sk_test_') ? 'test' : stripeKey ? 'unknown' : null,
+      envKey: 'STRIPE_SECRET_KEY',
+    },
     builtinGateway: {
       reachable: true,
       service: 'Albert Hermes HTTP API',
@@ -20,6 +26,6 @@ export async function GET() {
       credentials: state.credentials.length,
       lastUpdatedAt: state.lastUpdatedAt,
     },
-    env: Object.keys(process.env).filter(k => k.startsWith('ALBERT')),
+    env: Object.keys(process.env).filter(k => k.startsWith('ALBERT') || k.startsWith('HERMES') || k === 'STRIPE_SECRET_KEY'),
   });
 }

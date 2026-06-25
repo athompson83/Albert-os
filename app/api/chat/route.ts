@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createGatewayReply, recordChat } from '@/lib/hermes-gateway';
+import { createGatewayReply, getHermesRuntimeConfig, recordChat } from '@/lib/hermes-gateway';
 
 export const runtime = 'nodejs';
 export const maxDuration = 120;
@@ -32,6 +32,6 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({
     reply,
     project: chat.project,
-    gateway: 'builtin-hermes-http-api',
+    gateway: getHermesRuntimeConfig(),
   });
 }

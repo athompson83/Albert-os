@@ -1,7 +1,7 @@
 import TopBar from '@/components/TopBar';
 
 const files = [
-  { name: 'SentinelQA', type: 'folder', size: '-', modified: '2026-04-09' },
+  { name: 'Hermes Operations', type: 'folder', size: '-', modified: '2026-04-09' },
   { name: 'APEx360', type: 'folder', size: '-', modified: '2026-04-08' },
   { name: 'Lt-Orientation-May2026.docx', type: 'doc', size: '48 KB', modified: '2026-04-09' },
   { name: 'CARES-Q1-2026.csv', type: 'csv', size: '214 KB', modified: '2026-04-07' },

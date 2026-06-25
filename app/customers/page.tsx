@@ -86,7 +86,9 @@ export default function CustomersPage() {
 
         {!snapshot?.connected && (
           <div style={{ border: '1px solid rgba(245,158,11,0.45)', background: 'rgba(245,158,11,0.08)', borderRadius: 10, padding: 14, marginBottom: 16 }}>
-            <div style={{ color: '#fbbf24', fontWeight: 700, fontSize: 14 }}>Stripe needs one credential</div>
+            <div style={{ color: '#fbbf24', fontWeight: 700, fontSize: 14 }}>
+              {snapshot?.required?.length ? 'Stripe needs one credential' : 'Stripe sync needs attention'}
+            </div>
             <div style={{ color: 'var(--text)', fontSize: 13, marginTop: 5 }}>
               {snapshot?.setup?.message || 'Add STRIPE_SECRET_KEY to show live Stripe customers and revenue.'}
             </div>

@@ -26,14 +26,12 @@ type GitHubCommit = {
 
 const AGENT_LABELS: Record<string, string> = {
   albert: 'Albert',
-  operator: 'Operator',
-  sentinelqa: 'SentinelQA',
+  hermes: 'Hermes',
 };
 
 function inferAgentId(text: string) {
   const normalized = text.toLowerCase();
-  if (normalized.includes('sentinel') || normalized.includes('quality') || normalized.includes('protocol')) return 'sentinelqa';
-  if (normalized.includes('credential') || normalized.includes('workflow') || normalized.includes('deploy') || normalized.includes('vercel') || normalized.includes('api')) return 'operator';
+  if (normalized.includes('credential') || normalized.includes('workflow') || normalized.includes('deploy') || normalized.includes('vercel') || normalized.includes('api') || normalized.includes('quality') || normalized.includes('protocol')) return 'hermes';
   return 'albert';
 }
 

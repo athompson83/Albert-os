@@ -26,8 +26,7 @@ AlbertOS exposes a Hermes-friendly HTTP surface so Hermes can discover the app, 
 
 - `GET /api/progress` returns the full feed.
 - `GET /api/progress?agent=albert` filters for Albert.
-- `GET /api/progress?agent=operator` filters for automation and system work.
-- `GET /api/progress?agent=sentinelqa` filters for quality/protocol work.
+- `GET /api/progress?agent=hermes` filters for Hermes automation and system work.
 - `GET /api/logs/exchanges` returns saved exchanges across product feedback, progress feedback, chats, Slack, Hermes inbox, Stripe syncs, tasks, credentials, and workflows.
 - `GET /api/marketing` returns campaigns, outreach assets, prospect lists, product marketing assets, and marketing tasks.
 - `GET /api/stripe/summary` returns Stripe CRM/revenue status when `STRIPE_SECRET_KEY` is configured.
@@ -44,8 +43,7 @@ Configure the Slack app with:
 Slash command examples:
 
 - `/albert status`
-- `/albert operator check current workflows`
-- `/albert sentinelqa summarize quality work`
+- `/albert hermes check current workflows`
 
 ## Stripe CRM Setup
 

@@ -128,39 +128,118 @@ type HermesState = {
 
 const stateKey = '__albertHermesGatewayState';
 
+function getConfiguredGatewayUrl() {
+  return (process.env.ALBERT_GATEWAY_URL || process.env.HERMES_GATEWAY_URL || '').replace(/\/+$/, '');
+}
+
+function getGatewayHost(url: string) {
+  try {
+    return new URL(url).host;
+  } catch {
+    return url || null;
+  }
+}
+
+export function getHermesRuntimeConfig() {
+  const url = getConfiguredGatewayUrl();
+  return {
+    mode: url ? 'external-http' : 'builtin-local',
+    externalGatewayConfigured: Boolean(url),
+    externalGatewayHost: url ? getGatewayHost(url) : null,
+    envKeys: {
+      ALBERT_GATEWAY_URL: Boolean(process.env.ALBERT_GATEWAY_URL),
+      HERMES_GATEWAY_URL: Boolean(process.env.HERMES_GATEWAY_URL),
+    },
+  };
+}
+
+function extractGatewayReply(data: unknown): string | null {
+  if (!data || typeof data !== 'object') return null;
+  const record = data as Record<string, unknown>;
+  const candidates = [
+    record.reply,
+    record.response,
+    record.message,
+    record.content,
+    record.final_response,
+    typeof record.result === 'object' && record.result ? (record.result as Record<string, unknown>).content : null,
+  ];
+  const match = candidates.find(value => typeof value === 'string' && value.trim());
+  return typeof match === 'string' ? match.trim() : null;
+}
+
+async function requestExternalGateway(message: string, agentId: string) {
+  const gatewayUrl = getConfiguredGatewayUrl();
+  if (!gatewayUrl) return { configured: false, reply: null as string | null, error: null as string | null };
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 60000);
+  try {
+    const res = await fetch(`${gatewayUrl}/agent`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'ngrok-skip-browser-warning': 'true',
+      },
+      body: JSON.stringify({
+        message,
+        prompt: message,
+        agentId,
+        source: 'albert-os-chat',
+      }),
+      signal: controller.signal,
+      cache: 'no-store',
+    });
+    const text = await res.text();
+    let data: unknown = null;
+    try {
+      data = text ? JSON.parse(text) : null;
+    } catch {
+      data = { response: text };
+    }
+
+    if (!res.ok) {
+      return {
+        configured: true,
+        reply: null,
+        error: `Hermes HTTP ${res.status}: ${text.slice(0, 180) || res.statusText}`,
+      };
+    }
+
+    const reply = extractGatewayReply(data);
+    if (!reply) {
+      return {
+        configured: true,
+        reply: null,
+        error: `Hermes replied without a usable message field. Keys: ${data && typeof data === 'object' ? Object.keys(data as Record<string, unknown>).join(', ') : 'none'}`,
+      };
+    }
+
+    return { configured: true, reply, error: null };
+  } catch (error) {
+    return {
+      configured: true,
+      reply: null,
+      error: error instanceof Error ? error.message : String(error),
+    };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 function initialAgents(): HermesAgent[] {
   return [
     {
       id: 'albert',
       name: 'Albert',
-      emoji: '🎩',
-      role: 'CEO / operator',
-      description: 'Coordinates strategy, execution, revenue experiments, and Adam-facing operations.',
+      emoji: 'A',
+      role: 'Hermes command agent',
+      description: 'Coordinates strategy, execution, revenue experiments, and Adam-facing operations through Hermes.',
       color: '#6366f1',
       isDefault: true,
       sessionId: 'albert-os-web',
       avatar: '/avatars/albert.png',
       context: 'Albert OS is Adam Thompson personal AI command center connected through a Hermes-compatible HTTP gateway.',
-    },
-    {
-      id: 'sentinelqa',
-      name: 'SentinelQA',
-      emoji: '🛡️',
-      role: 'EMS quality',
-      description: 'Clinical quality, protocol, and performance analytics support.',
-      color: '#10b981',
-      sessionId: 'sentinelqa',
-      avatar: '/avatars/sentinelqa.png',
-    },
-    {
-      id: 'operator',
-      name: 'Operator',
-      emoji: '⚙️',
-      role: 'Automation',
-      description: 'Workflow operations, task routing, and system checks.',
-      color: '#f59e0b',
-      sessionId: 'operator',
-      avatar: '/avatars/operator.png',
     },
   ];
 }
@@ -452,6 +531,7 @@ export function getHermesState(): HermesState {
     };
   }
   const state = globalStore[stateKey]!;
+  state.agents = state.agents.filter(agent => agent.id === 'albert');
   state.credentials ||= [];
   state.products ||= initialProducts();
   state.events ||= [];
@@ -511,6 +591,21 @@ export async function createGatewayReply(message: string, agentId = 'albert') {
   const state = getHermesState();
   const agent = state.agents.find(item => item.id === agentId) || state.agents[0];
   const normalized = message.toLowerCase();
+  const external = await requestExternalGateway(message, agent.id);
+
+  if (external.reply) {
+    return external.reply;
+  }
+
+  if (external.configured) {
+    const runtime = getHermesRuntimeConfig();
+    const detail = external.error ? ` Last error: ${external.error}` : '';
+    return [
+      `I could not reach live Hermes at ${runtime.externalGatewayHost || 'the configured gateway'}.`,
+      detail,
+      'I did not generate a fake Hermes answer. Check that ALBERT_GATEWAY_URL or HERMES_GATEWAY_URL points to the active Hermes HTTP API, then send the message again.',
+    ].filter(Boolean).join('\n');
+  }
 
   if (
     normalized.includes('capability') ||
@@ -573,9 +668,9 @@ export async function createGatewayReply(message: string, agentId = 'albert') {
   const openTasks = state.tasks.filter(task => !task.archivedAt && task.status !== 'done').length;
   const capabilitySummary = getCapabilities().filter(capability => capability.status === 'ready').length;
   return [
-    `I'm here, Adam. I have the Albert OS context loaded now, not just the gateway heartbeat.`,
-    `Right now I can see ${openTasks} open tasks, ${state.workflows.length} workflow, ${state.agents.length} agents, and ${capabilitySummary} ready capabilities.`,
-    `Ask me for a progress report, blockers, tasks, workflow status, or capabilities and I will answer from the live project feed.`,
+    `Albert OS local mode is online, but no live Hermes gateway URL is configured for chat.`,
+    `Right now the local command center can see ${openTasks} open tasks, ${state.workflows.length} workflow, ${state.agents.length} agent, and ${capabilitySummary} ready capabilities.`,
+    `Set ALBERT_GATEWAY_URL or HERMES_GATEWAY_URL to the active Hermes HTTP API when you want live Hermes replies here.`,
   ].join('\n');
 }
 

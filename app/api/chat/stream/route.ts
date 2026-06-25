@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { createGatewayReply, recordChat } from '@/lib/hermes-gateway';
+import { createGatewayReply, getHermesRuntimeConfig, recordChat } from '@/lib/hermes-gateway';
 
 export const runtime = 'nodejs';
 export const maxDuration = 120;
@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
         }
 
         const chat = recordChat(message, reply, body.project || 'General', body.attachments);
-        send('done', { reply, project: chat.project, gateway: 'builtin-hermes-http-api-stream' });
+        send('done', { reply, project: chat.project, gateway: getHermesRuntimeConfig() });
       } catch (error) {
         send('error', { message: error instanceof Error ? error.message : String(error) });
       } finally {

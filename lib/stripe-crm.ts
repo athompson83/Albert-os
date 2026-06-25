@@ -77,7 +77,7 @@ export async function getStripeCrmSnapshot() {
       generatedAt: new Date().toISOString(),
       required: ['STRIPE_SECRET_KEY'],
       setup: {
-        message: 'Add STRIPE_SECRET_KEY in Vercel and local .env to show Stripe customers and revenue.',
+        message: 'STRIPE_SECRET_KEY is not visible to this running deployment. Add it to the albert-os Production environment in Vercel, then redeploy.',
         endpoints: ['/api/stripe/summary', '/customers', '/revenue'],
       },
       summary: {
@@ -171,8 +171,12 @@ export async function getStripeCrmSnapshot() {
     return {
       connected: false,
       generatedAt: new Date().toISOString(),
-      required: ['STRIPE_SECRET_KEY'],
+      required: [],
       error: error instanceof Error ? error.message : String(error),
+      setup: {
+        message: 'Stripe key is present, but Stripe could not be synced. Check the key value, mode, and Stripe account permissions.',
+        endpoints: ['/api/stripe/summary', '/customers', '/revenue'],
+      },
       summary: {
         customerCount: 0,
         payingCustomers: 0,

@@ -84,7 +84,7 @@ export default function MarketingPage() {
         </div>
 
         <div style={{ display: 'flex', gap: 8, overflowX: 'auto', marginBottom: 14, paddingBottom: 2 }}>
-          {['all', 'albert', 'operator', 'outreach', 'prospects', 'product', 'site'].map(item => (
+          {['all', 'albert', 'hermes', 'outreach', 'prospects', 'product', 'site'].map(item => (
             <button
               key={item}
               onClick={() => setFilter(item)}

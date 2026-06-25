@@ -47,7 +47,7 @@ export function getMarketingSnapshot() {
         ...file,
         summary: body ? summarize(body) : 'No local asset found yet.',
         status: body ? 'active' : 'draft',
-        agentId: file.type === 'experiment' ? 'albert' : 'operator',
+        agentId: file.type === 'experiment' ? 'albert' : 'hermes',
       } satisfies MarketingAsset;
     });
 
@@ -70,7 +70,7 @@ export function getMarketingSnapshot() {
       source: `store/${file}`,
       summary: count ? `${count} prospects available for outreach.` : 'Prospect list is ready for Hermes to update.',
       status: count ? 'ready' : 'draft',
-      agentId: 'operator',
+      agentId: 'hermes',
     } satisfies MarketingAsset;
   });
 

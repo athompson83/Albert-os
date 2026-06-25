@@ -7,6 +7,7 @@ import { Send, RotateCcw, Paperclip, X, History, ChevronDown, Mic, MicOff, Volum
 
 const PROXY = process.env.NEXT_PUBLIC_PROXY_URL || 'https://legwork-brisket-anyplace.ngrok-free.dev';
 const ERROR_PHRASES = ['having a moment', 'having trouble', 'try again', 'had a moment'];
+const CHAT_STORAGE_VERSION = 'v2';
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 type Attachment = { name: string; url: string; type: string; size: number };
@@ -142,7 +143,7 @@ async function uploadFile(file: File): Promise<Attachment | null> {
 const MAX_STORED = 100;
 
 function getStorageKey(agentId: string) {
-  return `albert-chat-messages-${agentId}`;
+  return `albert-chat-messages-${CHAT_STORAGE_VERSION}-${agentId}`;
 }
 
 function loadStoredMessages(agentId: string): Message[] {
