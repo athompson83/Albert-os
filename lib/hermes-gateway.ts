@@ -173,6 +173,7 @@ function normalizeAgentLabels(reply: string) {
     .replace(/\bSentinelQA\b/g, 'Hermes')
     .replace(/\bOperator\b/g, 'Hermes')
     .replace(/\boperator\b/g, 'Hermes')
+    .replace(/\b3 agents\b/g, '1 agent')
     .replace(/Agent:\s*Hermes/gi, 'Agent: Hermes');
 }
 
