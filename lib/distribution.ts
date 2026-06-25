@@ -1,3 +1,6 @@
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
+import { createCipheriv, createHash, randomBytes } from 'crypto';
+import { dirname, join } from 'path';
 import { logExchange } from '@/lib/exchange-log';
 import { recordHermesEvent, upsertCredential } from '@/lib/hermes-gateway';
 
@@ -25,6 +28,10 @@ export type DistributionConnection = {
   maskedCredentials: Record<string, string>;
   notes?: string;
   accessAvailable: boolean;
+};
+
+type StoredDistributionConnection = DistributionConnection & {
+  encryptedCredentials?: Record<string, string>;
 };
 
 const distributionStateKey = '__albertDistributionConnections';
@@ -111,9 +118,33 @@ export const distributionPlatforms: DistributionPlatform[] = [
 ];
 
 function distributionConnections() {
-  const globalStore = globalThis as typeof globalThis & { [distributionStateKey]?: DistributionConnection[] };
-  globalStore[distributionStateKey] ||= [];
+  const globalStore = globalThis as typeof globalThis & { [distributionStateKey]?: StoredDistributionConnection[] };
+  globalStore[distributionStateKey] ||= readStoredConnections();
   return globalStore[distributionStateKey]!;
+}
+
+function getStorePath() {
+  return process.env.ALBERT_DISTRIBUTION_STORE ||
+    (process.env.VERCEL ? join('/tmp', 'albert-os-distribution.json') : join(process.cwd(), '.albert-os', 'distribution-connections.json'));
+}
+
+function readStoredConnections(): StoredDistributionConnection[] {
+  try {
+    const path = getStorePath();
+    if (!existsSync(path)) return [];
+    const parsed = JSON.parse(readFileSync(path, 'utf-8'));
+    return Array.isArray(parsed?.connections) ? parsed.connections : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeStoredConnections(connections: StoredDistributionConnection[]) {
+  try {
+    const path = getStorePath();
+    mkdirSync(dirname(path), { recursive: true });
+    writeFileSync(path, JSON.stringify({ updatedAt: new Date().toISOString(), connections }, null, 2), 'utf-8');
+  } catch {}
 }
 
 function maskCredential(value: string) {
@@ -122,13 +153,29 @@ function maskCredential(value: string) {
   return `${value.slice(0, 4)}...${value.slice(-4)}`;
 }
 
+function encryptCredential(value: string) {
+  const secret = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || 'albert-os-local-development-secret';
+  const key = createHash('sha256').update(secret).digest();
+  const iv = randomBytes(12);
+  const cipher = createCipheriv('aes-256-gcm', key, iv);
+  const encrypted = Buffer.concat([cipher.update(value, 'utf8'), cipher.final()]);
+  const tag = cipher.getAuthTag();
+  return `${iv.toString('base64')}.${tag.toString('base64')}.${encrypted.toString('base64')}`;
+}
+
+function publicConnection(connection: StoredDistributionConnection): DistributionConnection {
+  const { encryptedCredentials, ...safe } = connection;
+  void encryptedCredentials;
+  return safe;
+}
+
 export function getDistributionSnapshot() {
   const connections = distributionConnections();
   const platforms = distributionPlatforms.map(platform => {
     const connection = connections.find(item => item.platformId === platform.id);
     return {
       ...platform,
-      connection: connection || null,
+      connection: connection ? publicConnection(connection) : null,
     };
   });
   const connected = platforms.filter(platform => platform.connection?.status === 'connected').length;
@@ -138,7 +185,7 @@ export function getDistributionSnapshot() {
     connected,
     total: distributionPlatforms.length,
     platforms,
-    connections,
+    connections: connections.map(publicConnection),
     publishQueue: [],
     publishHistory: [],
   };
@@ -165,7 +212,12 @@ export function saveDistributionConnection(input: {
       .filter(([, value]) => Boolean(value?.trim()))
       .map(([key, value]) => [key, maskCredential(value.trim())]),
   );
-  const connection: DistributionConnection = {
+  const encryptedCredentials = Object.fromEntries(
+    Object.entries(credentials)
+      .filter(([, value]) => Boolean(value?.trim()))
+      .map(([key, value]) => [key, encryptCredential(value.trim())]),
+  );
+  const connection: StoredDistributionConnection = {
     platformId: platform.id,
     status: 'connected',
     updatedAt: now,
@@ -173,6 +225,7 @@ export function saveDistributionConnection(input: {
     maskedCredentials,
     notes: input.notes?.trim() || undefined,
     accessAvailable: true,
+    encryptedCredentials,
   };
 
   const connections = distributionConnections();
@@ -182,6 +235,7 @@ export function saveDistributionConnection(input: {
   } else {
     connections.unshift(connection);
   }
+  writeStoredConnections(connections);
 
   for (const [key, value] of Object.entries(credentials)) {
     if (!value?.trim()) continue;
