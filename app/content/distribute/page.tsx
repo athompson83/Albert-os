@@ -58,6 +58,11 @@ export default function DistributePage() {
     load().catch(() => setNotice('Unable to load platform connections right now.'));
   }, []);
 
+  useEffect(() => {
+    const platformId = new URLSearchParams(window.location.search).get('platform');
+    if (platformId) setExpanded(platformId);
+  }, []);
+
   const platforms = useMemo(() => snapshot?.platforms || [], [snapshot?.platforms]);
   const connected = snapshot?.connected || 0;
   const total = snapshot?.total || platforms.length || 6;
