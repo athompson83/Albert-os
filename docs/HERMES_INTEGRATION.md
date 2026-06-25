@@ -14,6 +14,8 @@ AlbertOS exposes a Hermes-friendly HTTP surface so Hermes can discover the app, 
 ## Write Paths
 
 - `POST /api/chat/stream` for live Albert or agent conversations. Body: `{ "message": "...", "agentId": "albert" }`.
+- `POST /api/progress/feedback` for Adam feedback on progress. Body: `{ "message": "...", "agentId": "albert" }`.
+- `POST /api/logs/exchanges` for any custom exchange Hermes wants to preserve. Body: `{ "summary": "...", "kind": "custom", "source": "hermes" }`.
 - `POST/PATCH /hermes/tasks`
 - `POST/PATCH /hermes/credentials`
 - `POST/PATCH /hermes/products`
@@ -26,6 +28,7 @@ AlbertOS exposes a Hermes-friendly HTTP surface so Hermes can discover the app, 
 - `GET /api/progress?agent=albert` filters for Albert.
 - `GET /api/progress?agent=operator` filters for automation and system work.
 - `GET /api/progress?agent=sentinelqa` filters for quality/protocol work.
+- `GET /api/logs/exchanges` returns saved exchanges across product feedback, progress feedback, chats, Slack, Hermes inbox, Stripe syncs, tasks, credentials, and workflows.
 - `GET /api/marketing` returns campaigns, outreach assets, prospect lists, product marketing assets, and marketing tasks.
 - `GET /api/stripe/summary` returns Stripe CRM/revenue status when `STRIPE_SECRET_KEY` is configured.
 

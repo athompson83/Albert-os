@@ -1,3 +1,5 @@
+import { logExchange } from '@/lib/exchange-log';
+
 type StripeCustomer = {
   id: string;
   email?: string | null;
@@ -61,6 +63,15 @@ async function stripeFetch<T>(path: string): Promise<T> {
 export async function getStripeCrmSnapshot() {
   const configured = Boolean(process.env.STRIPE_SECRET_KEY);
   if (!configured) {
+    logExchange({
+      source: 'stripe',
+      direction: 'outbound',
+      channel: 'stripe-crm',
+      kind: 'stripe_sync_skipped',
+      actor: 'AlbertOS',
+      targetAgentId: 'albert',
+      summary: 'Stripe CRM sync skipped because STRIPE_SECRET_KEY is not configured.',
+    });
     return {
       connected: false,
       generatedAt: new Date().toISOString(),
@@ -122,7 +133,7 @@ export async function getStripeCrmSnapshot() {
       0,
     );
 
-    return {
+    const snapshot = {
       connected: true,
       generatedAt: new Date().toISOString(),
       required: [] as string[],
@@ -136,7 +147,27 @@ export async function getStripeCrmSnapshot() {
       customers: crmCustomers.sort((a, b) => b.totalRevenue - a.totalRevenue),
       payments: payments.slice(0, 20),
     };
+    logExchange({
+      source: 'stripe',
+      direction: 'outbound',
+      channel: 'stripe-crm',
+      kind: 'stripe_sync',
+      actor: 'AlbertOS',
+      targetAgentId: 'albert',
+      summary: `Stripe CRM synced ${snapshot.summary.customerCount} customers and ${snapshot.summary.successfulPayments} successful payments.`,
+      payload: { summary: snapshot.summary },
+    });
+    return snapshot;
   } catch (error) {
+    logExchange({
+      source: 'stripe',
+      direction: 'outbound',
+      channel: 'stripe-crm',
+      kind: 'stripe_sync_error',
+      actor: 'AlbertOS',
+      targetAgentId: 'albert',
+      summary: error instanceof Error ? error.message : String(error),
+    });
     return {
       connected: false,
       generatedAt: new Date().toISOString(),

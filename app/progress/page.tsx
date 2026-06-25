@@ -53,6 +53,9 @@ export default function ProgressPage() {
   const [error, setError] = useState('');
   const [filter, setFilter] = useState<'all' | ProgressUpdate['source']>('all');
   const [agentFilter, setAgentFilter] = useState('all');
+  const [feedback, setFeedback] = useState('');
+  const [feedbackStatus, setFeedbackStatus] = useState('');
+  const [sendingFeedback, setSendingFeedback] = useState(false);
 
   const load = useCallback(async (agent = agentFilter) => {
     setLoading(true);
@@ -77,6 +80,33 @@ export default function ProgressPage() {
     const all = snapshot?.updates || [];
     return filter === 'all' ? all : all.filter(update => update.source === filter);
   }, [snapshot, filter]);
+
+  async function sendFeedback() {
+    const message = feedback.trim();
+    if (!message) return;
+    setSendingFeedback(true);
+    setFeedbackStatus('');
+    try {
+      const res = await fetch('/api/progress/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message,
+          agentId: agentFilter === 'all' ? 'albert' : agentFilter,
+          sourceFilter: filter,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
+      setFeedback('');
+      setFeedbackStatus('Saved to logs and sent to Albert.');
+      await load(agentFilter);
+    } catch (err) {
+      setFeedbackStatus(err instanceof Error ? err.message : String(err));
+    } finally {
+      setSendingFeedback(false);
+    }
+  }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: 'var(--background)' }}>
@@ -234,6 +264,24 @@ export default function ProgressPage() {
           </section>
 
           <aside style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: isMobile ? 14 : 16, alignSelf: 'start', minWidth: 0 }}>
+            <h3 style={{ margin: '0 0 10px', color: '#fff', fontSize: 15 }}>Send Progress Feedback</h3>
+            <textarea
+              value={feedback}
+              onChange={(event) => setFeedback(event.target.value)}
+              rows={4}
+              placeholder="Tell Albert what to change, prioritize, explain, or stop."
+              style={{ width: '100%', background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 8, color: '#fff', padding: 10, fontSize: 13, resize: 'vertical', marginBottom: 10 }}
+            />
+            <button
+              onClick={sendFeedback}
+              disabled={sendingFeedback || !feedback.trim()}
+              style={{ width: '100%', background: 'var(--primary)', border: 'none', borderRadius: 8, color: '#fff', padding: '9px 12px', cursor: feedback.trim() ? 'pointer' : 'not-allowed', opacity: sendingFeedback || !feedback.trim() ? 0.65 : 1, marginBottom: 8 }}
+            >
+              {sendingFeedback ? 'Saving...' : 'Send to Albert'}
+            </button>
+            {feedbackStatus && <div style={{ color: feedbackStatus.includes('Saved') ? '#10b981' : '#fca5a5', fontSize: 12, marginBottom: 16 }}>{feedbackStatus}</div>}
+
+            <div style={{ borderTop: '1px solid var(--border)', margin: '14px 0' }} />
             <h3 style={{ margin: '0 0 12px', color: '#fff', fontSize: 15 }}>Needs Adam</h3>
             {(snapshot?.blockers || []).length === 0 && <div style={{ color: 'var(--text-muted)', fontSize: 13 }}>No blockers listed.</div>}
             {(snapshot?.blockers || []).map(item => (

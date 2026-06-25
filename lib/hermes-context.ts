@@ -54,6 +54,8 @@ export function buildHermesBootstrap(origin = 'https://albert-os.vercel.app') {
       'Use /hermes/products to add, update, remove, or comment on digital products.',
       'Use /api/chat/stream for live Albert or agent conversations; pass agentId to talk to a specific agent.',
       'Use /api/progress?agent=albert, /api/progress?agent=operator, or /api/progress?agent=sentinelqa to filter work by agent.',
+      'Use /api/progress/feedback to receive Adam feedback about progress; AlbertOS saves it to exchange logs and Hermes events.',
+      'Use /api/logs/exchanges to read saved data exchanges. Product feedback, progress feedback, chat, Slack, Stripe syncs, and Hermes inbox updates are logged.',
       'Use /api/stripe/summary for Stripe CRM and revenue status. AlbertOS needs STRIPE_SECRET_KEY in the runtime environment.',
       'Use /api/marketing to see outreach, campaigns, prospect files, product assets, and revenue work.',
       'Use /hermes/inbox for general progress events or structured updates when no specialized endpoint fits.',

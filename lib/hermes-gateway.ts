@@ -6,6 +6,7 @@ import {
   findCapabilityForMessage,
   getCapabilities,
 } from '@/lib/capabilities';
+import { logExchange } from '@/lib/exchange-log';
 
 export type HermesAgent = {
   id: string;
@@ -492,6 +493,17 @@ export function recordHermesEvent(event: Omit<HermesEvent, 'id' | 'timestamp'>) 
   };
   state.events = [entry, ...state.events].slice(0, 100);
   state.lastUpdatedAt = entry.timestamp;
+  logExchange({
+    source: event.type === 'hermes_inbox' ? 'hermes' : 'system',
+    direction: 'internal',
+    channel: 'hermes-events',
+    kind: event.type,
+    actor: event.type === 'hermes_inbox' ? 'Hermes' : 'AlbertOS',
+    targetAgentId: 'albert',
+    summary: `${event.title}: ${event.detail}`,
+    relatedId: event.entityId,
+    payload: entry,
+  });
   return entry;
 }
 
@@ -578,6 +590,17 @@ export function recordChat(message: string, reply: string, project = 'General', 
   };
   getHermesState().chats.push(entry);
   touchState();
+  logExchange({
+    source: project.toLowerCase() === 'slack' ? 'slack' : 'web',
+    direction: 'inbound',
+    channel: project,
+    kind: 'chat_exchange',
+    actor: 'Adam',
+    targetAgentId: 'albert',
+    summary: message.slice(0, 180),
+    relatedId: entry.id,
+    payload: { message, reply, project, attachments },
+  });
   return entry;
 }
 
@@ -609,6 +632,17 @@ export function upsertAgent(body: Partial<HermesAgent>) {
     title: 'Agent registry updated',
     detail: `${agent.name} was ${existing ? 'updated' : 'created'}.`,
     entityId: agent.id,
+  });
+  logExchange({
+    source: 'web',
+    direction: 'internal',
+    channel: 'agents',
+    kind: existing ? 'agent_updated' : 'agent_created',
+    actor: 'AlbertOS',
+    targetAgentId: agent.id,
+    summary: `${agent.name} was ${existing ? 'updated' : 'created'}.`,
+    relatedId: agent.id,
+    payload: agent,
   });
   return agent;
 }
@@ -653,6 +687,19 @@ export function upsertTask(body: Partial<HermesTask>) {
     detail: `${task.title} is now ${task.status}.`,
     entityId: task.id,
   });
+  if (body.response || body.notes) {
+    logExchange({
+      source: 'web',
+      direction: 'inbound',
+      channel: 'tasks',
+      kind: 'task_feedback',
+      actor: task.assignedTo === 'adam' ? 'Adam' : 'AlbertOS',
+      targetAgentId: 'albert',
+      summary: `${task.title}: ${body.notes || 'Adam supplied requested task information.'}`,
+      relatedId: task.id,
+      payload: { taskId: task.id, response: body.response, notes: body.notes, status: task.status },
+    });
+  }
   return task;
 }
 
@@ -715,6 +762,17 @@ export function runWorkflow(id: string, input: Record<string, unknown> = {}) {
     detail: `${workflow.name} completed with ${workflow.steps.length} step${workflow.steps.length === 1 ? '' : 's'}.`,
     entityId: workflow.id,
   });
+  logExchange({
+    source: 'system',
+    direction: 'internal',
+    channel: 'workflows',
+    kind: 'workflow_run',
+    actor: 'AlbertOS',
+    targetAgentId: 'albert',
+    summary: `${workflow.name} completed.`,
+    relatedId: workflow.id,
+    payload: run,
+  });
   return run;
 }
 
@@ -750,6 +808,17 @@ export function upsertCredential(body: Partial<HermesCredential> & { value?: str
     title: 'Credential updated',
     detail: `${credential.label} is ${credential.status}.`,
     entityId: credential.id,
+  });
+  logExchange({
+    source: 'web',
+    direction: 'inbound',
+    channel: 'credentials',
+    kind: credential.status === 'provided' ? 'credential_provided' : 'credential_requested',
+    actor: body.value ? 'Adam' : credential.requestedBy,
+    targetAgentId: 'albert',
+    summary: `${credential.label} is ${credential.status}.`,
+    relatedId: credential.id,
+    payload: credential,
   });
   return credential;
 }
@@ -795,6 +864,31 @@ export function upsertProduct(body: Partial<HermesProduct> & { comment?: string;
     detail: `${product.title} is now ${product.status.replace('_', ' ')}.`,
     entityId: product.id,
   });
+  if (body.comment?.trim()) {
+    logExchange({
+      source: 'web',
+      direction: 'inbound',
+      channel: 'products',
+      kind: 'product_feedback',
+      actor: body.author || 'Adam',
+      targetAgentId: 'albert',
+      summary: `${product.title}: ${body.comment.trim()}`,
+      relatedId: product.id,
+      payload: { productId: product.id, status: product.status, comment: body.comment.trim() },
+    });
+  } else {
+    logExchange({
+      source: 'hermes',
+      direction: existing ? 'internal' : 'inbound',
+      channel: 'products',
+      kind: existing ? 'product_updated' : 'product_created',
+      actor: 'Hermes',
+      targetAgentId: 'albert',
+      summary: `${product.title} is now ${product.status.replace('_', ' ')}.`,
+      relatedId: product.id,
+      payload: product,
+    });
+  }
   return product;
 }
 
@@ -802,6 +896,18 @@ export function ingestHermesUpdate(body: Record<string, unknown>) {
   const kind = String(body.kind || body.type || 'status');
   const title = String(body.title || body.summary || 'Hermes update');
   const detail = String(body.detail || body.message || body.description || 'Hermes sent an update to Albert OS.');
+
+  logExchange({
+    source: 'hermes',
+    direction: 'inbound',
+    channel: 'hermes-inbox',
+    kind,
+    actor: 'Hermes',
+    targetAgentId: typeof body.agentId === 'string' ? body.agentId : 'albert',
+    summary: title,
+    relatedId: typeof body.entityId === 'string' ? body.entityId : undefined,
+    payload: body,
+  });
 
   if (kind === 'task' && typeof body.task === 'object' && body.task) {
     return { kind, task: upsertTask(body.task as Partial<HermesTask>) };

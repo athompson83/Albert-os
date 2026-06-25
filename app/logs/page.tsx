@@ -1,43 +1,48 @@
 'use client';
-import { useEffect, useState, useCallback } from 'react';
+
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import TopBar from '@/components/TopBar';
+import useIsMobile from '@/components/useIsMobile';
 
-interface Conversation {
+type ExchangeLog = {
   id: string;
-  source: 'web' | 'whatsapp';
-  channel: string;
   timestamp: string;
-  project: string;
-  domain: string;
-  user: string;
-  albert: string;
-  durationMs?: number;
-}
-
-const SOURCE_COLORS: Record<string, string> = {
-  web: '#6366f1',
-  whatsapp: '#10b981',
+  source: 'web' | 'hermes' | 'slack' | 'system' | 'stripe';
+  direction: 'inbound' | 'outbound' | 'internal';
+  channel: string;
+  kind: string;
+  actor: string;
+  targetAgentId?: string;
+  summary: string;
+  relatedId?: string;
+  persisted: boolean;
 };
 
-const SOURCE_ICONS: Record<string, string> = {
-  web: '🖥️',
-  whatsapp: '📱',
+const sourceColor: Record<string, string> = {
+  web: '#6366f1',
+  hermes: '#38bdf8',
+  slack: '#10b981',
+  system: '#f59e0b',
+  stripe: '#a5b4fc',
 };
 
 function formatTs(ts: string) {
   try {
     const d = new Date(ts);
-    return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) + ' · ' +
-      d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  } catch { return ts; }
+    return `${d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })} / ${d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
+  } catch {
+    return ts;
+  }
 }
 
 export default function LogsPage() {
-  const [convos, setConvos] = useState<Conversation[]>([]);
+  const isMobile = useIsMobile();
+  const [logs, setLogs] = useState<ExchangeLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [expanded, setExpanded] = useState<string | null>(null);
-  const [filter, setFilter] = useState<string>('all');
+  const [source, setSource] = useState('all');
+  const [kind, setKind] = useState('all');
   const [search, setSearch] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
 
@@ -45,134 +50,129 @@ export default function LogsPage() {
     setLoading(true);
     setError('');
     try {
-      const params = new URLSearchParams({ date, limit: '200' });
-      if (filter !== 'all') params.set('source', filter);
-      const r = await fetch(`/api/history?${params}`);
-      const d = await r.json();
-      if (d.error) throw new Error(d.error);
-      setConvos(d.conversations || []);
-    } catch (e) {
-      setError(String(e));
+      const params = new URLSearchParams({ date, limit: '300' });
+      if (source !== 'all') params.set('source', source);
+      if (kind !== 'all') params.set('kind', kind);
+      if (search.trim()) params.set('search', search.trim());
+      const res = await fetch(`/api/logs/exchanges?${params}`, { cache: 'no-store' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
+      setLogs(data.logs || []);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
-  }, [date, filter]);
+  }, [date, source, kind, search]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    void load();
+  }, [load]);
 
-  const filtered = convos.filter(c => {
-    if (!search) return true;
-    const q = search.toLowerCase();
-    return c.user.toLowerCase().includes(q) || c.albert.toLowerCase().includes(q) || c.project.toLowerCase().includes(q);
-  });
-
-  const projects = [...new Set(convos.map(c => c.project).filter(Boolean))].sort();
+  const kinds = useMemo(() => ['all', ...Array.from(new Set(logs.map(log => log.kind))).sort()], [logs]);
+  const counts = useMemo(() => ({
+    total: logs.length,
+    inbound: logs.filter(log => log.direction === 'inbound').length,
+    persisted: logs.filter(log => log.persisted).length,
+  }), [logs]);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: 'var(--background)' }}>
-      <TopBar title="Chat History" />
-      <div style={{ flex: 1, overflowY: 'auto', padding: '20px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: 'var(--background)' }}>
+      <TopBar title="Logs" />
+      <main style={{ flex: 1, overflowY: 'auto', padding: isMobile ? 14 : 22 }}>
+        <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', gap: 14, marginBottom: 18 }}>
+          <div>
+            <h2 style={{ margin: 0, color: '#fff', fontSize: 22 }}>Albert Exchange Log</h2>
+            <p style={{ margin: '6px 0 0', color: 'var(--text-muted)', fontSize: 13 }}>
+              Product feedback, progress feedback, chats, Slack, Hermes inbox, and system updates.
+            </p>
+          </div>
+          <button onClick={load} disabled={loading} style={{ background: 'var(--primary)', border: 'none', borderRadius: 8, padding: '9px 16px', color: '#fff', cursor: 'pointer', opacity: loading ? 0.65 : 1 }}>
+            {loading ? 'Refreshing...' : 'Refresh'}
+          </button>
+        </div>
 
-        {/* Controls */}
-        <div style={{ display: 'flex', gap: 10, marginBottom: 20, flexWrap: 'wrap', alignItems: 'center' }}>
-          <input
-            type="date" value={date}
-            onChange={e => setDate(e.target.value)}
-            style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: '8px 12px', color: 'var(--text)', fontSize: 13 }}
-          />
-          <select value={filter} onChange={e => setFilter(e.target.value)} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: '8px 12px', color: 'var(--text)', fontSize: 13 }}>
-            <option value="all">All Sources</option>
-            <option value="web">Albert OS (Web)</option>
-            <option value="whatsapp">WhatsApp</option>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(3, minmax(0, 160px))', gap: 10, marginBottom: 14 }}>
+          <Metric label="Entries" value={String(counts.total)} />
+          <Metric label="Inbound" value={String(counts.inbound)} />
+          <Metric label="Saved" value={String(counts.persisted)} />
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '180px 170px 210px minmax(220px, 1fr)', gap: 10, marginBottom: 14 }}>
+          <input type="date" value={date} onChange={event => setDate(event.target.value)} style={controlStyle} />
+          <select value={source} onChange={event => setSource(event.target.value)} style={controlStyle}>
+            <option value="all">All sources</option>
+            <option value="web">Web</option>
+            <option value="hermes">Hermes</option>
+            <option value="slack">Slack</option>
+            <option value="system">System</option>
+            <option value="stripe">Stripe</option>
           </select>
-          <input
-            value={search} onChange={e => setSearch(e.target.value)}
-            placeholder="Search conversations..."
-            style={{ flex: 1, minWidth: 200, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: '8px 12px', color: 'var(--text)', fontSize: 13 }}
-          />
-          <button onClick={load} style={{ background: 'var(--primary)', border: 'none', borderRadius: 8, padding: '8px 16px', color: '#fff', cursor: 'pointer', fontSize: 13 }}>Refresh</button>
+          <select value={kind} onChange={event => setKind(event.target.value)} style={controlStyle}>
+            {kinds.map(item => <option key={item} value={item}>{item.replace(/_/g, ' ')}</option>)}
+          </select>
+          <input value={search} onChange={event => setSearch(event.target.value)} placeholder="Search logs..." style={controlStyle} />
         </div>
 
-        {/* Stats */}
-        <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
-          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: '10px 16px', fontSize: 13 }}>
-            <span style={{ color: 'var(--text-muted)' }}>Total: </span>
-            <span style={{ color: 'var(--text)', fontWeight: 600 }}>{filtered.length}</span>
-          </div>
-          {['web','whatsapp'].map(src => {
-            const count = filtered.filter(c => c.source === src).length;
-            if (!count) return null;
-            return (
-              <div key={src} style={{ background: 'var(--surface)', border: `1px solid ${SOURCE_COLORS[src]}44`, borderRadius: 8, padding: '10px 16px', fontSize: 13 }}>
-                <span style={{ color: SOURCE_COLORS[src] }}>{SOURCE_ICONS[src]} {src}: </span>
-                <span style={{ color: 'var(--text)', fontWeight: 600 }}>{count}</span>
-              </div>
-            );
-          })}
-          {projects.length > 0 && (
-            <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: '10px 16px', fontSize: 13 }}>
-              <span style={{ color: 'var(--text-muted)' }}>Projects: </span>
-              {projects.map(p => (
-                <span key={p} style={{ marginLeft: 4, color: '#a5b4fc', cursor: 'pointer' }} onClick={() => setSearch(p)}>{p}</span>
-              ))}
-            </div>
-          )}
-        </div>
+        {error && <div style={{ color: '#fca5a5', border: '1px solid rgba(239,68,68,0.45)', background: 'rgba(239,68,68,0.08)', borderRadius: 8, padding: 12, marginBottom: 14 }}>{error}</div>}
+        {loading && <div style={{ color: 'var(--text-muted)', padding: 34, textAlign: 'center' }}>Loading logs...</div>}
 
-        {error && (
-          <div style={{ color: '#fca5a5', background: '#7f1d1d22', border: '1px solid #7f1d1d', borderRadius: 8, padding: 12, marginBottom: 16, fontSize: 13, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span>⚠️ {error}</span>
-            <button onClick={load} style={{ background: 'transparent', border: '1px solid #fca5a5', borderRadius: 6, padding: '4px 10px', color: '#fca5a5', cursor: 'pointer', fontSize: 12 }}>Retry</button>
+        {!loading && logs.length === 0 && (
+          <div style={{ color: 'var(--text-muted)', padding: 44, textAlign: 'center', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10 }}>
+            No exchanges found for this view yet.
           </div>
         )}
 
-        {loading && <div style={{ color: 'var(--text-muted)', padding: 40, textAlign: 'center' }}>⏳ Loading conversations...</div>}
-
-        {!loading && filtered.length === 0 && !error && (
-          <div style={{ color: 'var(--text-muted)', padding: 60, textAlign: 'center' }}>
-            <div style={{ fontSize: 32, marginBottom: 12 }}>💬</div>
-            <div>No conversations found for {date}</div>
-          </div>
-        )}
-
-        {/* Conversation list */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {filtered.map(c => {
-            const isOpen = expanded === c.id;
+        <div style={{ display: 'grid', gap: 8 }}>
+          {logs.map(log => {
+            const open = expanded === log.id;
+            const color = sourceColor[log.source] || '#94a3b8';
             return (
-              <div key={c.id} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden' }}>
-                {/* Header row */}
-                <div
-                  onClick={() => setExpanded(isOpen ? null : c.id)}
-                  style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', cursor: 'pointer' }}
+              <article key={log.id} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden' }}>
+                <button
+                  onClick={() => setExpanded(open ? null : log.id)}
+                  style={{ width: '100%', border: 'none', background: 'transparent', color: 'inherit', textAlign: 'left', padding: isMobile ? 12 : 14, cursor: 'pointer', display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '170px minmax(0, 1fr) 160px', gap: 10, alignItems: 'center' }}
                 >
-                  <span style={{ fontSize: 11, borderRadius: 5, padding: '2px 7px', background: SOURCE_COLORS[c.source] + '22', color: SOURCE_COLORS[c.source], border: '1px solid ' + SOURCE_COLORS[c.source] + '44', flexShrink: 0 }}>
-                    {SOURCE_ICONS[c.source]} {c.channel}
-                  </span>
-                  {c.project && c.project !== 'General' && (
-                    <span style={{ fontSize: 11, borderRadius: 5, padding: '2px 7px', background: '#6366f122', color: '#a5b4fc', border: '1px solid #6366f144', flexShrink: 0 }}>{c.project}</span>
-                  )}
-                  <span style={{ flex: 1, fontSize: 13, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.user}</span>
-                  <span style={{ fontSize: 11, color: 'var(--text-muted)', flexShrink: 0 }}>{formatTs(c.timestamp)}</span>
-                  <span style={{ color: 'var(--text-muted)', fontSize: 14 }}>{isOpen ? '▲' : '▼'}</span>
-                </div>
-                {/* Expanded */}
-                {isOpen && (
-                  <div style={{ borderTop: '1px solid var(--border)', padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                      <div style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600 }}>YOU</div>
-                      <div style={{ fontSize: 13, color: 'var(--text)', background: 'var(--primary)22', borderRadius: 8, padding: '10px 14px', whiteSpace: 'pre-wrap' }}>{c.user}</div>
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                      <div style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600 }}>🎩 ALBERT</div>
-                      <div style={{ fontSize: 13, color: 'var(--text)', background: 'var(--surface-2)', borderRadius: 8, padding: '10px 14px', whiteSpace: 'pre-wrap', border: '1px solid var(--border)' }}>{c.albert}</div>
-                    </div>
+                  <div style={{ display: 'flex', gap: 7, alignItems: 'center', flexWrap: 'wrap' }}>
+                    <span style={{ color, background: `${color}18`, border: `1px solid ${color}55`, borderRadius: 999, padding: '3px 8px', fontSize: 11 }}>{log.source}</span>
+                    <span style={{ color: 'var(--text-muted)', fontSize: 11 }}>{log.direction}</span>
+                  </div>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ color: '#fff', fontSize: 13, fontWeight: 650, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: isMobile ? 'normal' : 'nowrap' }}>{log.summary}</div>
+                    <div style={{ color: 'var(--text-muted)', fontSize: 11, marginTop: 3 }}>{log.kind.replace(/_/g, ' ')} / {log.channel} / {log.actor}{log.targetAgentId ? ` to ${log.targetAgentId}` : ''}</div>
+                  </div>
+                  <div style={{ color: 'var(--text-muted)', fontSize: 11, textAlign: isMobile ? 'left' : 'right' }}>{formatTs(log.timestamp)}</div>
+                </button>
+                {open && (
+                  <div style={{ borderTop: '1px solid var(--border)', padding: 14, color: 'var(--text)', fontSize: 13, lineHeight: 1.5 }}>
+                    <div><strong>Saved:</strong> {log.persisted ? 'Yes' : 'Memory fallback'}</div>
+                    <div><strong>Related:</strong> {log.relatedId || 'None'}</div>
+                    <div><strong>ID:</strong> {log.id}</div>
                   </div>
                 )}
-              </div>
+              </article>
             );
           })}
         </div>
-      </div>
+      </main>
     </div>
   );
 }
+
+function Metric({ label, value }: { label: string; value: string }) {
+  return (
+    <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: 12 }}>
+      <div style={{ color: '#fff', fontSize: 22, fontWeight: 750 }}>{value}</div>
+      <div style={{ color: 'var(--text-muted)', fontSize: 12 }}>{label}</div>
+    </div>
+  );
+}
+
+const controlStyle: React.CSSProperties = {
+  background: 'var(--surface)',
+  border: '1px solid var(--border)',
+  borderRadius: 8,
+  padding: '9px 11px',
+  color: 'var(--text)',
+  fontSize: 13,
+};
