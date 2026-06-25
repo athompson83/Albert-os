@@ -1,8 +1,28 @@
 import { auth, isAuthConfigured } from '@/auth';
 import { NextResponse } from 'next/server';
 
+const DEFAULT_PROTECTED_HOSTS = [
+  'albert-os.vercel.app',
+  'localhost:3001',
+  'localhost:3000',
+  '127.0.0.1:3001',
+  '127.0.0.1:3000',
+];
+
+function protectedHosts() {
+  return (process.env.ALBERT_AUTH_HOSTS || DEFAULT_PROTECTED_HOSTS.join(','))
+    .split(',')
+    .map(host => host.trim().toLowerCase())
+    .filter(Boolean);
+}
+
 export default auth((req) => {
   const { pathname } = req.nextUrl;
+  const host = (req.headers.get('host') || req.nextUrl.host || '').toLowerCase();
+
+  if (!protectedHosts().includes(host)) {
+    return NextResponse.next();
+  }
 
   // Allow public paths
   const publicPaths = [
