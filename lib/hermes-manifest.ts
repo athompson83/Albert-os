@@ -1,4 +1,5 @@
 import { getCapabilities, getCapabilitySummary } from '@/lib/capabilities';
+import { getDistributionSnapshot } from '@/lib/distribution';
 import { getHermesState } from '@/lib/hermes-gateway';
 
 export function buildHermesManifest() {
@@ -6,6 +7,7 @@ export function buildHermesManifest() {
   const openTasks = state.tasks.filter(task => !task.archivedAt && task.status !== 'done');
   const credentialTasks = openTasks.filter(task => task.requestKind === 'credential');
   const products = state.products.filter(product => product.status !== 'removed');
+  const distribution = getDistributionSnapshot();
 
   return {
     ok: true,
@@ -22,6 +24,8 @@ export function buildHermesManifest() {
       enabledWorkflows: state.workflows.filter(workflow => workflow.enabled).length,
       products: products.length,
       productsReadyForReview: products.filter(product => product.status === 'ready' || product.status === 'needs_improvement').length,
+      distributionConnected: distribution.connected,
+      distributionPlatforms: distribution.total,
       capabilities: getCapabilitySummary(),
     },
     endpoints: {
@@ -45,6 +49,8 @@ export function buildHermesManifest() {
       stripeSummary: '/api/stripe/summary',
       customers: '/customers',
       marketing: '/api/marketing',
+      distribution: '/hermes/distribution',
+      distributionApi: '/api/distribution',
       progress: '/api/progress',
       progressByAgent: '/api/progress?agent=albert',
       progressFeedback: '/api/progress/feedback',
@@ -56,6 +62,7 @@ export function buildHermesManifest() {
     writeContracts: {
       taskUpdate: { method: 'PATCH', endpoint: '/hermes/tasks', required: ['id'] },
       credentialProvide: { method: 'POST', endpoint: '/hermes/credentials', required: ['key', 'label', 'value'] },
+      distributionConnect: { method: 'POST', endpoint: '/api/distribution', required: ['platformId', 'credentials'] },
       productUpdate: { method: 'PATCH', endpoint: '/hermes/products', required: ['id'] },
       workflowCreate: { method: 'POST', endpoint: '/hermes/workflows', required: ['name'] },
       agentCreate: { method: 'POST', endpoint: '/hermes/agents', required: ['name'] },
@@ -66,6 +73,17 @@ export function buildHermesManifest() {
       slackSlashCommand: { method: 'POST', endpoint: '/api/slack/commands', required: ['text'] },
     },
     capabilities: getCapabilities(),
+    distribution: {
+      connected: distribution.connected,
+      total: distribution.total,
+      platforms: distribution.platforms.map(platform => ({
+        id: platform.id,
+        name: platform.name,
+        connected: platform.connection?.status === 'connected',
+        accessAvailable: Boolean(platform.connection?.accessAvailable),
+        updatedAt: platform.connection?.updatedAt,
+      })),
+    },
     recentEvents: state.events.slice(0, 10),
   };
 }
