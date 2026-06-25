@@ -73,6 +73,56 @@ async function callChat(
   return { reply, project: data.project || 'General' };
 }
 
+async function callChatStream(
+  text: string,
+  attachments: Attachment[],
+  agentId: string,
+  onToken: (token: string) => void,
+): Promise<{ reply: string; project: string }> {
+  const res = await fetch('/api/chat/stream', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message: text, attachments, agentId }),
+  });
+  if (!res.ok || !res.body) {
+    return callChat(text, attachments, agentId);
+  }
+
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+  let reply = '';
+  let project = 'General';
+
+  while (true) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    const events = buffer.split('\n\n');
+    buffer = events.pop() || '';
+
+    for (const eventBlock of events) {
+      const event = eventBlock.split('\n').find(line => line.startsWith('event: '))?.slice(7);
+      const dataLine = eventBlock.split('\n').find(line => line.startsWith('data: '));
+      if (!dataLine) continue;
+      const data = JSON.parse(dataLine.slice(6)) as { text?: string; reply?: string; project?: string; message?: string };
+      if (event === 'token' && data.text) {
+        reply += data.text;
+        onToken(data.text);
+      }
+      if (event === 'done') {
+        reply = data.reply || reply;
+        project = data.project || project;
+      }
+      if (event === 'error') {
+        throw new Error(data.message || 'Stream failed');
+      }
+    }
+  }
+
+  return { reply: reply || 'Got it.', project };
+}
+
 async function uploadFile(file: File): Promise<Attachment | null> {
   const form = new FormData();
   form.append('file', file);
@@ -349,23 +399,31 @@ export default function ChatPage() {
       // ────────────────────────────────────────────────────────────────────
 
       try {
-        const { reply, project } = await callChat(text, atts, selectedAgent.id);
-        const isError = ERROR_PHRASES.some((p) => reply.toLowerCase().includes(p));
+        const assistantId = `${Date.now()}r`;
         setMessages((m) => [
           ...m,
           {
-            id: `${Date.now()}r`,
+            id: assistantId,
             role: 'assistant',
-            content: reply,
+            content: '',
             time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
-            isError,
-            retryText: isError ? text : undefined,
-            project,
+            project: 'General',
             agentId: selectedAgent.id,
             agentName: selectedAgent.name,
             agentEmoji: selectedAgent.emoji,
           },
         ]);
+        const { reply, project } = await callChatStream(text, atts, selectedAgent.id, (token) => {
+          setMessages((m) => m.map((msg) => (msg.id === assistantId ? { ...msg, content: `${msg.content}${token}` } : msg)));
+        });
+        const isError = ERROR_PHRASES.some((p) => reply.toLowerCase().includes(p));
+        setMessages((m) => m.map((msg) => (msg.id === assistantId ? {
+          ...msg,
+            content: reply,
+            isError,
+            retryText: isError ? text : undefined,
+            project,
+          } : msg)));
       } catch {
         setMessages((m) => [
           ...m,

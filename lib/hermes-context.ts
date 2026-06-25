@@ -52,9 +52,26 @@ export function buildHermesBootstrap(origin = 'https://albert-os.vercel.app') {
       'Use /hermes/tasks for Adam-facing tasks, approvals, and credential requests.',
       'Use /hermes/credentials to request or confirm credentials. Values sent by Adam are returned masked in UI state.',
       'Use /hermes/products to add, update, remove, or comment on digital products.',
+      'Use /api/chat/stream for live Albert or agent conversations; pass agentId to talk to a specific agent.',
+      'Use /api/progress?agent=albert, /api/progress?agent=operator, or /api/progress?agent=sentinelqa to filter work by agent.',
+      'Use /api/stripe/summary for Stripe CRM and revenue status. AlbertOS needs STRIPE_SECRET_KEY in the runtime environment.',
+      'Use /api/marketing to see outreach, campaigns, prospect files, product assets, and revenue work.',
       'Use /hermes/inbox for general progress events or structured updates when no specialized endpoint fits.',
       'After any state-changing request, read /hermes/health or /api/status to confirm AlbertOS received the update.',
     ],
+    environmentForFullConnection: {
+      albertOS: ['STRIPE_SECRET_KEY', 'SLACK_SIGNING_SECRET', 'SLACK_BOT_TOKEN', 'SLACK_DEFAULT_CHANNEL_ID'],
+      hermes: ['ALBERT_OS_BASE_URL=https://albert-os.vercel.app', 'ALBERT_OS_BOOTSTRAP_URL=https://albert-os.vercel.app/hermes/bootstrap'],
+      slackApp: {
+        eventRequestUrl: withOrigin(origin, '/api/slack/events'),
+        slashCommandRequestUrl: withOrigin(origin, '/api/slack/commands'),
+        recommendedBotScopes: ['app_mentions:read', 'chat:write', 'commands'],
+      },
+      stripe: {
+        dashboardKey: 'STRIPE_SECRET_KEY',
+        apiUsed: ['GET /v1/customers', 'GET /v1/payment_intents'],
+      },
+    },
     absoluteEndpoints: Object.fromEntries(
       Object.entries(manifest.endpoints).map(([key, path]) => [key, withOrigin(origin, path)]),
     ),

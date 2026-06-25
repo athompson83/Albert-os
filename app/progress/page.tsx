@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import TopBar from '@/components/TopBar';
 import useIsMobile from '@/components/useIsMobile';
 
@@ -10,6 +10,7 @@ type ProgressUpdate = {
   detail: string;
   source: 'github' | 'report' | 'status';
   timestamp: string;
+  agentId: string;
   url?: string;
   author?: string;
   sha?: string;
@@ -22,6 +23,7 @@ type ProgressSnapshot = {
   latest?: ProgressUpdate;
   counts: { github: number; reports: number; status: number; blockers: number; capabilities?: number; readyCapabilities?: number };
   blockers: Array<{ issue: string; action: string; priority: string }>;
+  agents: Array<{ id: string; name: string; updates: number; blockers: number; capabilities: number; readyCapabilities: number; latest?: ProgressUpdate }>;
   updates: ProgressUpdate[];
   capabilities?: {
     summary: { total: number; ready: number; needsSetup: number; blocked: number };
@@ -50,12 +52,14 @@ export default function ProgressPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [filter, setFilter] = useState<'all' | ProgressUpdate['source']>('all');
+  const [agentFilter, setAgentFilter] = useState('all');
 
-  async function load() {
+  const load = useCallback(async (agent = agentFilter) => {
     setLoading(true);
     setError('');
     try {
-      const res = await fetch('/api/progress', { cache: 'no-store' });
+      const query = agent && agent !== 'all' ? `?agent=${encodeURIComponent(agent)}` : '';
+      const res = await fetch(`/api/progress${query}`, { cache: 'no-store' });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
       setSnapshot(data);
@@ -63,11 +67,11 @@ export default function ProgressPage() {
       setError(err instanceof Error ? err.message : String(err));
     }
     setLoading(false);
-  }
+  }, [agentFilter]);
 
   useEffect(() => {
-    load();
-  }, []);
+    load(agentFilter);
+  }, [agentFilter, load]);
 
   const updates = useMemo(() => {
     const all = snapshot?.updates || [];
@@ -85,7 +89,7 @@ export default function ProgressPage() {
               GitHub commits, status reports, and blockers for {snapshot?.repo || 'athompson83/Albert-os'}.
             </p>
           </div>
-          <button onClick={load} disabled={loading} style={{ background: 'var(--primary)', border: 'none', borderRadius: 8, padding: '9px 16px', color: '#fff', cursor: 'pointer', opacity: loading ? 0.6 : 1, width: isMobile ? '100%' : 'auto' }}>
+          <button onClick={() => load()} disabled={loading} style={{ background: 'var(--primary)', border: 'none', borderRadius: 8, padding: '9px 16px', color: '#fff', cursor: 'pointer', opacity: loading ? 0.6 : 1, width: isMobile ? '100%' : 'auto' }}>
             {loading ? 'Refreshing...' : 'Refresh'}
           </button>
         </div>
@@ -95,6 +99,36 @@ export default function ProgressPage() {
             {error}
           </div>
         )}
+
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: isMobile ? 12 : 14, marginBottom: 18 }}>
+          <div style={{ color: '#fff', fontSize: 13, fontWeight: 650, marginBottom: 10 }}>Filter by agent</div>
+          <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 2 }}>
+            {[{ id: 'all', name: 'All agents' }, ...(snapshot?.agents || [])].map(agent => {
+              const active = agentFilter === agent.id;
+              return (
+                <button
+                  key={agent.id}
+                  onClick={() => setAgentFilter(agent.id)}
+                  style={{
+                    flex: '0 0 auto',
+                    minHeight: 36,
+                    background: active ? 'rgba(99,102,241,0.2)' : 'var(--surface-2)',
+                    border: `1px solid ${active ? '#6366f1' : 'var(--border)'}`,
+                    borderRadius: 8,
+                    color: active ? '#d8b4fe' : 'var(--text)',
+                    padding: '8px 12px',
+                    cursor: 'pointer',
+                    fontSize: 12,
+                    fontWeight: active ? 700 : 500,
+                  }}
+                >
+                  {agent.name}
+                  {'updates' in agent && <span style={{ color: 'var(--text-muted)', marginLeft: 6 }}>{agent.updates}</span>}
+                </button>
+              );
+            })}
+          </div>
+        </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, minmax(0, 1fr))' : 'repeat(4, minmax(140px, 1fr))', gap: isMobile ? 8 : 12, marginBottom: 18 }}>
           {[
@@ -186,6 +220,7 @@ export default function ProgressPage() {
                   <div style={{ minWidth: 0 }}>
                     <div style={{ fontSize: 11, color: sourceColor[update.source], fontWeight: 700, textTransform: 'uppercase' }}>{update.source}</div>
                     <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 5 }}>{formatTime(update.timestamp)}</div>
+                    <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 5 }}>{update.agentId}</div>
                     {update.sha && <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 5 }}>{update.sha}</div>}
                   </div>
                   <div style={{ minWidth: 0 }}>

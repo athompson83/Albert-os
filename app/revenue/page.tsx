@@ -11,6 +11,18 @@ type RevenueData = {
   growth: null | { free: number; paid: number; mrr: number };
   issues: { total: number; published: number; drafts: number; next_topic: string | null };
   leadmagnets: Array<{ name: string; file: string; date: string }>;
+  stripe?: {
+    connected: boolean;
+    required?: string[];
+    summary: {
+      customerCount: number;
+      payingCustomers: number;
+      grossRevenue: number;
+      successfulPayments: number;
+      currency: string;
+    };
+    customers: Array<{ id: string; name: string; email: string; totalRevenue: number; status: string }>;
+  };
 };
 
 type Product = {
@@ -70,7 +82,7 @@ export default function RevenuePage() {
 
   const metrics = [
     { label: 'MRR', value: money.format(revenue?.revenue.mrr || 0), tone: '#10b981' },
-    { label: 'ARR', value: money.format(revenue?.revenue.arr || 0), tone: '#38bdf8' },
+    { label: 'Stripe revenue', value: money.format(revenue?.stripe?.summary.grossRevenue || 0), tone: '#38bdf8' },
     { label: 'Catalog', value: `${activeProducts.length} products`, tone: '#a5b4fc' },
     { label: 'Pipeline value', value: money.format(catalogValue), tone: '#f59e0b' },
   ];
@@ -102,6 +114,28 @@ export default function RevenuePage() {
 
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'minmax(0, 1.3fr) minmax(300px, 0.7fr)', gap: 16 }}>
           <section style={{ display: 'grid', gap: 16 }}>
+            <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, padding: 18 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, marginBottom: 14, flexWrap: 'wrap' }}>
+                <div>
+                  <h3 style={{ margin: 0, color: '#fff', fontSize: 15 }}>Stripe CRM</h3>
+                  <div style={{ color: 'var(--text-muted)', fontSize: 12, marginTop: 3 }}>
+                    {revenue?.stripe?.connected ? `${revenue.stripe.summary.customerCount} customers, ${revenue.stripe.summary.payingCustomers} paying.` : 'Add Stripe key to load live customers.'}
+                  </div>
+                </div>
+                <Link href="/customers" style={smallLink}>Open customers</Link>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr', gap: 10 }}>
+                <MiniCard label="Customers" value={String(revenue?.stripe?.summary.customerCount || 0)} />
+                <MiniCard label="Paying" value={String(revenue?.stripe?.summary.payingCustomers || 0)} />
+                <MiniCard label="Payments" value={String(revenue?.stripe?.summary.successfulPayments || 0)} />
+              </div>
+              {!revenue?.stripe?.connected && (
+                <div style={{ color: '#fbbf24', fontSize: 12, marginTop: 12 }}>
+                  Needed: STRIPE_SECRET_KEY in Vercel and local environment.
+                </div>
+              )}
+            </div>
+
             <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, padding: 18 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, marginBottom: 14, flexWrap: 'wrap' }}>
                 <div>

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { readFileSync } from 'fs';
 import { join } from 'path';
+import { getStripeCrmSnapshot } from '@/lib/stripe-crm';
 
 const WORKSPACE = process.env.WORKSPACE_PATH || join(process.env.HOME || '', '.openclaw', 'workspace');
 
@@ -9,6 +10,7 @@ function readJSON(path: string, fallback: unknown = null) {
 }
 
 export async function GET() {
+  const stripe = await getStripeCrmSnapshot();
   const metrics = readJSON(join(WORKSPACE, 'revenue', 'metrics.json'), {
     beehiiv: { free_subscribers: 0, paid_subscribers: 0, paid_rate: 9 },
     history: [], targets: {}, sponsorships: [], total_earned: 0, started: null,
@@ -58,5 +60,6 @@ export async function GET() {
     },
     leadmagnets,
     started: metrics.started,
+    stripe,
   });
 }

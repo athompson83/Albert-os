@@ -8,6 +8,7 @@ export type ProgressUpdate = {
   detail: string;
   source: 'github' | 'report' | 'status';
   timestamp: string;
+  agentId: string;
   url?: string;
   author?: string;
   sha?: string;
@@ -22,6 +23,19 @@ type GitHubCommit = {
     committer?: { name?: string; date?: string };
   };
 };
+
+const AGENT_LABELS: Record<string, string> = {
+  albert: 'Albert',
+  operator: 'Operator',
+  sentinelqa: 'SentinelQA',
+};
+
+function inferAgentId(text: string) {
+  const normalized = text.toLowerCase();
+  if (normalized.includes('sentinel') || normalized.includes('quality') || normalized.includes('protocol')) return 'sentinelqa';
+  if (normalized.includes('credential') || normalized.includes('workflow') || normalized.includes('deploy') || normalized.includes('vercel') || normalized.includes('api')) return 'operator';
+  return 'albert';
+}
 
 function readTextFile(...segments: string[]) {
   const path = join(/* turbopackIgnore: true */ process.cwd(), ...segments);
@@ -50,6 +64,7 @@ function extractBullets(markdown: string, source: 'report' | 'status') {
       detail: line.replace(/^- /, '').replace(/\*\*/g, ''),
       source,
       timestamp,
+      agentId: inferAgentId(line),
     } satisfies ProgressUpdate));
 }
 
@@ -75,6 +90,7 @@ async function fetchGitHubCommits(): Promise<ProgressUpdate[]> {
         detail: title,
         source: 'github',
         timestamp: date,
+        agentId: inferAgentId(title),
         url: commit.html_url,
         author: commit.commit.author?.name || commit.commit.committer?.name,
         sha: commit.sha.slice(0, 7),
@@ -104,7 +120,9 @@ export async function getProgressSnapshot() {
     .filter(line => line.startsWith('|') && !line.includes('---') && !line.includes('Issue |'))
     .map(line => {
       const cells = line.split('|').map(cell => cell.trim()).filter(Boolean);
-      return { issue: cells[0] || 'Needs attention', action: cells[1] || '', priority: cells[2] || 'MEDIUM' };
+      const issue = cells[0] || 'Needs attention';
+      const action = cells[1] || '';
+      return { issue, action, priority: cells[2] || 'MEDIUM', agentId: inferAgentId(`${issue} ${action}`) };
     })
     .filter(item => {
       const key = item.issue.toLowerCase();
@@ -125,6 +143,21 @@ export async function getProgressSnapshot() {
     nextAction: capability.nextAction,
   }));
 
+  const agents = Object.entries(AGENT_LABELS).map(([id, name]) => {
+    const agentUpdates = updates.filter(update => update.agentId === id);
+    const agentBlockers = blockers.filter(blocker => blocker.agentId === id);
+    const readiness = capabilityReadiness.filter(capability => capability.agentId === id);
+    return {
+      id,
+      name,
+      updates: agentUpdates.length,
+      blockers: agentBlockers.length,
+      capabilities: readiness.length,
+      readyCapabilities: readiness.filter(capability => capability.status === 'ready').length,
+      latest: agentUpdates[0],
+    };
+  });
+
   return {
     generatedAt: new Date().toISOString(),
     repo: 'athompson83/Albert-os',
@@ -140,6 +173,7 @@ export async function getProgressSnapshot() {
     },
     blockers,
     updates,
+    agents,
     capabilities: {
       summary: capabilitySummary,
       readiness: capabilityReadiness,
