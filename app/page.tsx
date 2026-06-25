@@ -1,497 +1,493 @@
 'use client';
-import { useEffect, useState, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
-import TopBar from '@/components/TopBar';
+
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import {
+  Activity,
+  CheckCircle2,
+  CircleAlert,
+  ExternalLink,
+  GitBranch,
+  KeyRound,
+  MessageSquare,
+  Package,
+  Plus,
+  RefreshCw,
+  ShieldCheck,
+  TrendingUp,
+  X,
+} from 'lucide-react';
 import useIsMobile from '@/components/useIsMobile';
 
-type PendingItem = {
-  id: string;
-  text: string;
-  type: 'navigate' | 'chat' | 'external' | 'task';
-  href?: string;
-  chatPrompt?: string;
-  externalUrl?: string;
-  priority?: 'high' | 'medium' | 'low';
-  tag?: string;
+type StatusData = {
+  proxy: string;
+  hermes?: { connected: boolean; lastUpdatedAt: string };
+  agents: number;
+  activeWorkflows: number;
+  credentialsRequested?: number;
 };
 
 type Task = {
   id: string;
   title: string;
-  status: string;
-  priority: string;
-  project: string;
-  dueDate?: string;
-  source?: string;
+  description?: string;
+  status: 'todo' | 'inprogress' | 'review' | 'done';
+  priority: 'high' | 'medium' | 'low';
+  project?: string;
+  requestKind?: 'general' | 'credential' | 'product_review' | 'approval';
+  assignedTo?: 'adam' | 'hermes' | 'albert';
   archivedAt?: string;
+  updatedAt?: string;
 };
 
 type Product = {
   id: string;
   title: string;
-  status: string;
+  description: string;
+  status: 'draft' | 'ready' | 'needs_improvement' | 'removed' | 'published';
+  type: 'pdf' | 'template' | 'site' | 'bundle';
   price?: string;
+  downloadUrl?: string;
+  vercelUrl?: string;
+  updatedAt: string;
+  comments: Array<{ id: string; author: string; text: string; createdAt: string }>;
 };
 
-type RevenueSnapshot = {
+type RevenueData = {
   revenue: { mrr: number; arr: number; total_earned: number };
-  subscribers: { free: number; paid: number };
-  leadmagnets: unknown[];
+  stripe?: {
+    connected: boolean;
+    summary: { customerCount: number; payingCustomers: number; grossRevenue: number; successfulPayments: number };
+  };
 };
 
-interface SystemStatus {
-  proxy: string;
-  hermes?: {
-    connected: boolean;
-    lastUpdatedAt: string;
-    bootstrap?: string;
-    inbox?: string;
-    events?: Array<{ id: string; title: string; detail: string; timestamp: string; type: string }>;
-  };
-  agents: number;
-  workflows: number;
-  activeWorkflows: number;
-  products?: number;
-  credentialsRequested?: number;
-  session: {
-    date: string;
-    summary: string[];
-    pending: PendingItem[];
-  };
+type ExchangeLog = {
+  id: string;
+  timestamp: string;
+  source: 'web' | 'hermes' | 'slack' | 'system' | 'stripe';
+  kind: string;
+  channel: string;
+  actor: string;
+  summary: string;
+  relatedId?: string;
+};
+
+type WorkFilter = 'all' | 'tasks' | 'github' | 'products' | 'system';
+
+const panel: React.CSSProperties = {
+  background: 'linear-gradient(180deg, rgba(20,34,48,0.92), rgba(13,25,36,0.92))',
+  border: '1px solid rgba(93,121,148,0.32)',
+  borderRadius: 8,
+  boxShadow: '0 14px 40px rgba(0,0,0,0.22)',
+};
+
+const muted = '#9aa7b7';
+const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
+
+function timeAgo(value?: string) {
+  if (!value) return 'just now';
+  const diff = Math.max(1, Date.now() - new Date(value).getTime());
+  const minutes = Math.floor(diff / 60000);
+  if (minutes < 1) return 'just now';
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  return `${Math.floor(hours / 24)}d ago`;
 }
 
-const PRIORITY_COLOR: Record<string, string> = {
-  high: '#ef4444',
-  medium: '#f59e0b',
-  low: '#6366f1',
-};
+function priceNumber(value?: string) {
+  const amount = Number(String(value || '').replace(/[^0-9.]/g, ''));
+  return Number.isFinite(amount) ? amount : 0;
+}
 
-const TAG_COLOR: Record<string, string> = {
-  System: '#6366f1',
-  Revenue: '#10b981',
-  EMS: '#ef4444',
-  Tech: '#8b5cf6',
-};
+function sourceIcon(kind: string) {
+  if (kind.includes('product')) return Package;
+  if (kind.includes('task')) return CheckCircle2;
+  if (kind.includes('credential')) return KeyRound;
+  if (kind.includes('github')) return GitBranch;
+  return Activity;
+}
 
 export default function Dashboard() {
-  const router = useRouter();
   const isMobile = useIsMobile();
-  const [status, setStatus] = useState<SystemStatus | null>(null);
+  const [status, setStatus] = useState<StatusData | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
-  const [revenue, setRevenue] = useState<RevenueSnapshot | null>(null);
-  const [time, setTime] = useState('');
-  const [date, setDate] = useState('');
-  const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [dismissed, setDismissed] = useState<string[]>([]);
-  const [askingId, setAskingId] = useState<string | null>(null);
+  const [revenue, setRevenue] = useState<RevenueData | null>(null);
+  const [logs, setLogs] = useState<ExchangeLog[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<WorkFilter>('all');
+  const [actingId, setActingId] = useState<string | null>(null);
 
-  useEffect(() => {
-    const update = () => {
-      const now = new Date();
-      setTime(now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }));
-      setDate(now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }));
-    };
-    update();
-    const t = setInterval(update, 30000);
-    // Load dismissed from localStorage
-    const loadDismissed = window.setTimeout(() => {
-      try {
-        const d = JSON.parse(localStorage.getItem('dismissed-pending') || '[]');
-        setDismissed(d);
-      } catch {}
-    }, 0);
-    return () => {
-      clearInterval(t);
-      clearTimeout(loadDismissed);
-    };
-  }, []);
+  async function load() {
+    setLoading(true);
+    const [statusRes, tasksRes, productsRes, revenueRes, logsRes] = await Promise.all([
+      fetch('/api/status', { cache: 'no-store' }).catch(() => null),
+      fetch('/api/tasks', { cache: 'no-store' }).catch(() => null),
+      fetch('/api/products', { cache: 'no-store' }).catch(() => null),
+      fetch('/api/revenue', { cache: 'no-store' }).catch(() => null),
+      fetch('/api/logs/exchanges?limit=40', { cache: 'no-store' }).catch(() => null),
+    ]);
 
-  useEffect(() => {
-    fetch('/api/status').then(r => r.json()).then(setStatus).catch(() => {});
-    fetch('/api/tasks').then(r => r.json()).then(d => {
-      const active = (d.tasks || []).filter((t: Task) => !t.archivedAt && t.status !== 'done');
-      setTasks(active.slice(0, 5));
-    }).catch(() => {});
-    fetch('/api/products').then(r => r.json()).then(d => setProducts((d.products || []).filter((p: Product) => p.status !== 'removed'))).catch(() => {});
-    fetch('/api/revenue').then(r => r.json()).then(setRevenue).catch(() => {});
-  }, []);
-
-  const dismiss = useCallback((id: string) => {
-    setDismissed(prev => {
-      const next = [...prev, id];
-      localStorage.setItem('dismissed-pending', JSON.stringify(next));
-      return next;
-    });
-    setExpandedId(null);
-  }, []);
-
-  const handleAction = useCallback((item: PendingItem) => {
-    if (item.type === 'navigate' && item.href) {
-      router.push(item.href);
-    } else if (item.type === 'external' && item.externalUrl) {
-      window.open(item.externalUrl, '_blank');
-    } else if (item.type === 'chat' && item.chatPrompt) {
-      // Store prompt and go to chat
-      localStorage.setItem('chat-prefill', item.chatPrompt);
-      router.push('/chat');
+    if (statusRes?.ok) setStatus(await statusRes.json());
+    if (tasksRes?.ok) {
+      const data = await tasksRes.json();
+      setTasks((data.tasks || []).filter((task: Task) => !task.archivedAt));
     }
-  }, [router]);
+    if (productsRes?.ok) {
+      const data = await productsRes.json();
+      setProducts((data.products || []).filter((product: Product) => product.status !== 'removed'));
+    }
+    if (revenueRes?.ok) setRevenue(await revenueRes.json());
+    if (logsRes?.ok) {
+      const data = await logsRes.json();
+      setLogs(data.logs || []);
+    }
+    setLoading(false);
+  }
 
-  const markTaskDone = useCallback(async (taskId: string) => {
-    await fetch('/api/tasks', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: taskId, status: 'done' }),
-    });
-    setTasks(prev => prev.filter(t => t.id !== taskId));
+  useEffect(() => {
+    void load();
   }, []);
 
-  const hour = new Date().getHours();
-  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+  const openTasks = tasks.filter(task => task.status !== 'done');
+  const credentialTasks = openTasks.filter(task => task.requestKind === 'credential');
+  const approvals = openTasks.filter(task => task.requestKind === 'approval' || task.requestKind === 'product_review' || task.status === 'review');
+  const productQueue = products.filter(product => product.status === 'draft' || product.status === 'ready' || product.status === 'needs_improvement').slice(0, 4);
+  const topProducts = [...products].sort((a, b) => priceNumber(b.price) - priceNumber(a.price)).slice(0, 3);
+  const comments = products.flatMap(product => product.comments.map(comment => ({ ...comment, product: product.title }))).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 3);
 
-  const statCards = [
-    { label: 'System', value: status?.proxy === 'online' ? 'Online' : status ? 'Offline' : '…', color: status?.proxy === 'online' ? '#10b981' : '#ef4444', emoji: status?.proxy === 'online' ? '🟢' : '🔴', href: '/progress' },
-    { label: 'Adam Tasks', value: tasks.length || status?.session.pending.length || '0', color: '#f59e0b', emoji: '✅', href: '/tasks' },
-    { label: 'Products', value: products.length || status?.products || '0', color: '#a5b4fc', emoji: '📦', href: '/products' },
-    { label: 'MRR', value: `$${revenue?.revenue.mrr || 0}`, color: '#10b981', emoji: '💵', href: '/revenue' },
-  ];
+  const workstream = useMemo(() => {
+    const taskItems = openTasks.slice(0, 8).map(task => ({
+      id: `task-${task.id}`,
+      kind: 'task',
+      title: task.status === 'review' ? 'Approval needed' : task.status === 'inprogress' ? 'Task in progress' : 'Task queued',
+      detail: task.title,
+      timestamp: task.updatedAt,
+      href: `/tasks?task=${task.id}`,
+      tag: task.id.slice(-6),
+    }));
+    const productItems = products.slice(0, 8).map(product => ({
+      id: `product-${product.id}`,
+      kind: 'product',
+      title: product.status === 'published' ? 'Product published' : 'Product update',
+      detail: product.title,
+      timestamp: product.updatedAt,
+      href: '/products',
+      tag: product.status.replace('_', ' '),
+    }));
+    const logItems = logs.map(log => ({
+      id: `log-${log.id}`,
+      kind: log.kind,
+      title: log.kind.replace(/_/g, ' '),
+      detail: log.summary,
+      timestamp: log.timestamp,
+      href: log.channel === 'progress' ? '/progress' : log.channel === 'products' ? '/products' : '/logs',
+      tag: log.source,
+    }));
+    return [...logItems, ...taskItems, ...productItems]
+      .sort((a, b) => new Date(b.timestamp || 0).getTime() - new Date(a.timestamp || 0).getTime())
+      .filter(item => {
+        if (filter === 'all') return true;
+        if (filter === 'tasks') return item.kind.includes('task') || item.kind.includes('credential');
+        if (filter === 'products') return item.kind.includes('product');
+        if (filter === 'github') return item.kind.includes('github');
+        return item.kind.includes('status') || item.kind.includes('system') || item.kind.includes('stripe');
+      })
+      .slice(0, 10);
+  }, [filter, logs, openTasks, products]);
 
-  const quickLinks = [
-    { href: '/chat', label: 'Chat', emoji: '💬', desc: 'Talk to Albert' },
-    { href: '/revenue', label: 'Revenue', emoji: '💵', desc: 'Money dashboard' },
-    { href: '/tasks', label: 'Tasks', emoji: '✅', desc: 'Task board' },
-    { href: '/credentials', label: 'Credentials', emoji: '🔐', desc: 'Hermes access' },
-    { href: '/products', label: 'Products', emoji: '📦', desc: 'Review output' },
-    { href: '/content', label: 'Content', emoji: '📚', desc: 'Create assets' },
-    { href: '/workflows', label: 'Workflows', emoji: '⚡', desc: 'Automate tasks' },
-    { href: '/progress', label: 'Progress', emoji: '📈', desc: 'Hermes feed' },
-  ];
+  async function patchTask(task: Task, patch: Partial<Task>) {
+    setActingId(task.id);
+    try {
+      await fetch('/api/tasks', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: task.id, ...patch }),
+      });
+      await load();
+    } finally {
+      setActingId(null);
+    }
+  }
 
-  const visiblePending = (status?.session.pending || []).filter(p => !dismissed.includes(p.id));
-  const productsForReview = products.filter(product => product.status === 'ready' || product.status === 'needs_improvement').slice(0, 4);
-  const hermesReady = Boolean(status?.hermes?.connected);
-  const hermesEvents = status?.hermes?.events || [];
+  const layout = isMobile
+    ? { gridTemplateColumns: '1fr' }
+    : { gridTemplateColumns: 'minmax(300px, 0.9fr) minmax(420px, 1.25fr) minmax(320px, 1fr)' };
 
   return (
-    <div>
-      <TopBar title="Dashboard" />
-      <div style={{ padding: isMobile ? 14 : 24, maxWidth: 1100, margin: '0 auto', minWidth: 0 }}>
+    <main style={{ minHeight: '100vh', background: 'radial-gradient(circle at top left, rgba(76,91,255,0.12), transparent 34%), #07111b', color: '#e7edf7', padding: isMobile ? 14 : 16 }}>
+      <section style={{ ...panel, display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(5, minmax(0, 1fr))', marginBottom: 12, overflow: 'hidden' }}>
+        <StatusTile icon={ShieldCheck} label="Hermes Connected" value="v1.0.0" tone="#4ade80" active={Boolean(status?.hermes?.connected)} href="/hermes/bootstrap" />
+        <StatusTile icon={Activity} label="API Health" value={status?.proxy === 'online' ? 'Healthy' : 'Checking'} tone="#7dd3fc" active={status?.proxy === 'online'} href="/progress" />
+        <StatusTile icon={KeyRound} label="Credentials Needed" value={`${status?.credentialsRequested || credentialTasks.length} pending`} tone="#fbbf24" active={(status?.credentialsRequested || credentialTasks.length) > 0} href="/credentials" />
+        <StatusTile icon={RefreshCw} label="Last Sync" value={timeAgo(status?.hermes?.lastUpdatedAt)} tone="#a5b4fc" active href="/logs" />
+        <Link href="/progress" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none', color: '#fff', padding: 14, borderLeft: isMobile ? 'none' : '1px solid rgba(93,121,148,0.28)' }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 10, border: '1px solid rgba(148,163,184,0.38)', borderRadius: 7, padding: '10px 16px', background: 'rgba(255,255,255,0.05)', fontSize: 13, fontWeight: 700 }}>
+            <TrendingUp size={17} /> View Progress
+          </span>
+        </Link>
+      </section>
 
-        {/* Welcome */}
-        <div style={{ marginBottom: 28 }}>
-          <h2 style={{ fontSize: 24, fontWeight: 700, color: '#fff', margin: '0 0 4px' }}>{greeting}, Adam 👋</h2>
-          <p style={{ color: 'var(--text-muted)', margin: 0, fontSize: 14 }}>{date} · {time}</p>
-        </div>
+      <section style={{ display: 'grid', ...layout, gap: 12 }}>
+        <aside style={{ ...panel, padding: 14 }}>
+          <PanelTitle title="Needs Adam" count={credentialTasks.length + approvals.length} />
 
-        {/* Stat Cards */}
-        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, minmax(0, 1fr))' : 'repeat(4, 1fr)', gap: isMobile ? 8 : 16, marginBottom: 24 }}>
-          {statCards.map(s => {
-            const inner = (
-              <div style={{
-                background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12,
-                padding: isMobile ? '14px 12px' : '18px 20px', cursor: s.href ? 'pointer' : 'default',
-                transition: 'border-color 0.15s, transform 0.1s',
-              }}
-                onMouseEnter={e => { if (s.href) (e.currentTarget as HTMLDivElement).style.borderColor = s.color; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.borderColor = 'var(--border)'; }}
-              >
-                <div style={{ fontSize: 22, marginBottom: 8 }}>{s.emoji}</div>
-                <div style={{ fontSize: isMobile ? 22 : 28, fontWeight: 700, color: s.color }}>{String(s.value)}</div>
-                <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>{s.label}</div>
-              </div>
-            );
-            return s.href
-              ? <Link key={s.label} href={s.href} style={{ textDecoration: 'none' }}>{inner}</Link>
-              : <div key={s.label}>{inner}</div>;
-          })}
-        </div>
+          <Block title="Credential Requests" href="/credentials">
+            {credentialTasks.slice(0, 3).map(task => (
+              <ActionCard key={task.id} icon={KeyRound} title={task.title} detail={task.description || 'Needed by Hermes to keep work moving.'} meta={`Requested by ${task.project || 'Hermes'}`} button="Provide" href="/credentials" tone="#fbbf24" />
+            ))}
+            {credentialTasks.length === 0 && <EmptyLine text="No credentials waiting." />}
+          </Block>
 
-        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 16, marginBottom: 24 }}>
-
-          {/* Needs Attention */}
-          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 20 }}>
-            <h3 style={{ margin: '0 0 14px', fontSize: 14, fontWeight: 600, color: '#fff', display: 'flex', alignItems: 'center', gap: 6 }}>
-              ⏳ Needs Your Attention
-              {visiblePending.length > 0 && (
-                <span style={{ background: '#ef4444', color: '#fff', borderRadius: 20, fontSize: 11, padding: '1px 7px', fontWeight: 700 }}>
-                  {visiblePending.length}
-                </span>
-              )}
-            </h3>
-
-            {visiblePending.length === 0 && (
-              <div style={{ color: 'var(--text-muted)', fontSize: 13 }}>All clear 🎉</div>
-            )}
-
-            {visiblePending.map(item => {
-              const isExpanded = expandedId === item.id;
-              const isAsking = askingId === item.id;
-              const pColor = PRIORITY_COLOR[item.priority || 'medium'];
-              const tColor = TAG_COLOR[item.tag || 'System'] || '#6366f1';
-
-              return (
-                <div key={item.id} style={{ marginBottom: 8 }}>
-                  {/* Item row */}
-                  <div
-                    onClick={() => setExpandedId(isExpanded ? null : item.id)}
-                    style={{
-                      display: 'flex', gap: 10, alignItems: 'flex-start',
-                      padding: '10px 12px',
-                      background: isExpanded ? 'rgba(99,102,241,0.08)' : 'var(--surface-2)',
-                      borderRadius: isExpanded ? '8px 8px 0 0' : 8,
-                      border: `1px solid ${isExpanded ? 'rgba(99,102,241,0.4)' : 'var(--border)'}`,
-                      borderBottom: isExpanded ? 'none' : undefined,
-                      cursor: 'pointer',
-                      transition: 'background 0.15s',
-                    }}
-                  >
-                    <span style={{ color: pColor, fontSize: 12, marginTop: 1, flexShrink: 0 }}>●</span>
-                    <span style={{ fontSize: 13, color: 'var(--text)', flex: 1, lineHeight: 1.4 }}>{item.text}</span>
-                    <div style={{ display: 'flex', gap: 5, alignItems: 'center', flexShrink: 0 }}>
-                      {item.tag && (
-                        <span style={{ fontSize: 10, padding: '2px 6px', borderRadius: 10, background: `${tColor}22`, color: tColor, fontWeight: 600 }}>
-                          {item.tag}
-                        </span>
-                      )}
-                      <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{isExpanded ? '▲' : '▼'}</span>
-                    </div>
-                  </div>
-
-                  {/* Expanded actions */}
-                  {isExpanded && (
-                    <div style={{
-                      padding: '10px 12px', background: 'rgba(99,102,241,0.05)',
-                      border: '1px solid rgba(99,102,241,0.4)', borderTop: 'none',
-                      borderRadius: '0 0 8px 8px', display: 'flex', gap: 8, flexWrap: 'wrap',
-                    }}>
-                      {/* Primary action */}
-                      {(item.type === 'navigate' || item.type === 'external') && (
-                        <button onClick={() => handleAction(item)} style={actionBtn('#6366f1')}>
-                          {item.type === 'external' ? '↗ Open' : '→ Go There'}
-                        </button>
-                      )}
-                      {item.type === 'chat' && (
-                        <button
-                          onClick={() => { setAskingId(item.id); handleAction(item); }}
-                          disabled={isAsking}
-                          style={actionBtn('#10b981')}
-                        >
-                          💬 Ask Albert
-                        </button>
-                      )}
-                      {item.type === 'task' && item.href && (
-                        <button onClick={() => router.push(item.href!)} style={actionBtn('#6366f1')}>
-                          → View Task
-                        </button>
-                      )}
-                      {/* Mark done — always available */}
-                      <button onClick={() => dismiss(item.id)} style={actionBtn('#374151', true)}>
-                        ✓ Mark Done
-                      </button>
-                    </div>
-                  )}
+          <Block title="Approvals" href="/tasks">
+            {approvals.slice(0, 3).map(task => (
+              <div key={task.id} style={smallRowStyle}>
+                <CircleAlert size={16} color="#9aa7b7" />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ color: '#fff', fontSize: 13, fontWeight: 700 }}>{task.title}</div>
+                  <div style={{ color: muted, fontSize: 11, marginTop: 3 }}>{task.project || 'Hermes'} / {timeAgo(task.updatedAt)}</div>
                 </div>
-              );
-            })}
-          </div>
-
-          {/* Tasks from board */}
-          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 20 }}>
-            <h3 style={{ margin: '0 0 14px', fontSize: 14, fontWeight: 600, color: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span>✅ Open Tasks</span>
-              <Link href="/tasks" style={{ fontSize: 12, color: '#6366f1', textDecoration: 'none' }}>View all →</Link>
-            </h3>
-
-            {tasks.length === 0 && (
-              <div style={{ color: 'var(--text-muted)', fontSize: 13 }}>
-                {status ? 'No open tasks 🎉' : 'Loading...'}
-              </div>
-            )}
-
-            {tasks.map(task => (
-              <div
-                key={task.id}
-                style={{
-                  display: 'flex', gap: 10, alignItems: 'center',
-                  padding: '9px 12px', marginBottom: 6,
-                  background: 'var(--surface-2)', borderRadius: 8,
-                  border: '1px solid var(--border)',
-                  cursor: 'pointer', transition: 'border-color 0.15s',
-                }}
-                onMouseEnter={e => (e.currentTarget.style.borderColor = '#6366f1')}
-                onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}
-                onClick={() => router.push(`/tasks?task=${task.id}`)}
-              >
-                <span style={{ fontSize: 10, color: PRIORITY_COLOR[task.priority] || '#f59e0b' }}>●</span>
-                <span style={{ fontSize: 13, color: 'var(--text)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {task.title}
-                </span>
-                {task.project && (
-                  <span style={{ fontSize: 10, color: 'var(--text-muted)', flexShrink: 0 }}>{task.project}</span>
-                )}
-                <button
-                  onClick={e => { e.stopPropagation(); markTaskDone(task.id); }}
-                  title="Mark done"
-                  style={{
-                    background: 'transparent', border: '1px solid var(--border)',
-                    borderRadius: 4, color: 'var(--text-muted)', fontSize: 11,
-                    padding: '2px 6px', cursor: 'pointer', flexShrink: 0,
-                  }}
-                >
-                  ✓
+                <button disabled={actingId === task.id} onClick={() => patchTask(task, { status: 'done' })} style={miniButton('#4ade80')}>
+                  <CheckCircle2 size={14} /> Approve
+                </button>
+                <button disabled={actingId === task.id} onClick={() => patchTask(task, { status: 'todo' })} style={miniButton('#cbd5e1')}>
+                  <X size={14} /> Reject
                 </button>
               </div>
             ))}
-          </div>
-        </div>
+            {approvals.length === 0 && <EmptyLine text="No approvals waiting." />}
+          </Block>
 
-        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.2fr 0.8fr', gap: 16, marginBottom: 24 }}>
-          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 20 }}>
-            <h3 style={{ margin: '0 0 14px', fontSize: 14, fontWeight: 600, color: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span>💵 Revenue Engine</span>
-              <Link href="/revenue" style={{ fontSize: 12, color: '#a5b4fc', textDecoration: 'none' }}>Open →</Link>
-            </h3>
-            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, minmax(0, 1fr))', gap: 8, marginBottom: 12 }}>
-              <div style={miniMetricStyle}><strong>${revenue?.revenue.mrr || 0}</strong><span>MRR</span></div>
-              <div style={miniMetricStyle}><strong>{revenue?.subscribers.free || 0}</strong><span>Free subs</span></div>
-              <div style={miniMetricStyle}><strong>{revenue?.leadmagnets.length || 0}</strong><span>Lead magnets</span></div>
+          <Block title="Quick Actions">
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+              <QuickAction icon={KeyRound} label="Add Credential" href="/credentials" />
+              <QuickAction icon={Plus} label="Create Task" href="/tasks" />
+              <QuickAction icon={Package} label="New Product" href="/products" />
+              <QuickAction icon={MessageSquare} label="Open Chat" href="/chat" />
             </div>
-            <div style={{ display: 'grid', gap: 8 }}>
-              {productsForReview.map(product => (
-                <Link key={product.id} href="/products" style={{ textDecoration: 'none' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 8, padding: '9px 12px' }}>
-                    <span style={{ color: 'var(--text)', fontSize: 13, fontWeight: 600 }}>{product.title}</span>
-                    <span style={{ color: product.status === 'needs_improvement' ? '#f59e0b' : '#10b981', fontSize: 11, whiteSpace: 'nowrap' }}>{product.status.replace('_', ' ')}</span>
-                  </div>
-                </Link>
-              ))}
-              {productsForReview.length === 0 && <div style={{ color: 'var(--text-muted)', fontSize: 13 }}>No products waiting for review.</div>}
-            </div>
-          </div>
+          </Block>
+        </aside>
 
-          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 20 }}>
-            <h3 style={{ margin: '0 0 14px', fontSize: 14, fontWeight: 600, color: '#fff' }}>⚡ Hermes Connection</h3>
-            {[
-              ['Gateway', hermesReady ? 'Connected' : 'Offline', hermesReady],
-              ['Credentials', `${status?.credentialsRequested || 0} open`, !(status?.credentialsRequested || 0)],
-              ['Agents', String(status?.agents ?? 0), Boolean(status?.agents)],
-              ['Workflows', `${status?.activeWorkflows ?? 0} active`, Boolean(status?.activeWorkflows)],
-            ].map(([label, value, ok]) => (
-              <div key={String(label)} style={{ display: 'flex', justifyContent: 'space-between', gap: 10, padding: '8px 0', borderTop: '1px solid var(--border)' }}>
-                <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>{label}</span>
-                <span style={{ color: ok ? '#10b981' : '#f59e0b', fontSize: 12, fontWeight: 650 }}>{value}</span>
-              </div>
-            ))}
-            <Link href="/hermes" style={{ display: 'inline-block', marginTop: 10, color: '#a5b4fc', fontSize: 12, textDecoration: 'none' }}>Open manifest →</Link>
-          </div>
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '0.9fr 1.1fr', gap: 16, marginBottom: 24 }}>
-          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 20 }}>
-            <h3 style={{ margin: '0 0 14px', fontSize: 14, fontWeight: 600, color: '#fff' }}>Hermes Handoff</h3>
-            {[
-              ['Read first', status?.hermes?.bootstrap || '/hermes/bootstrap'],
-              ['Send updates', status?.hermes?.inbox || '/hermes/inbox'],
-              ['Credentials', '/credentials'],
-              ['Product review', '/products'],
-            ].map(([label, value]) => (
-              <div key={label} style={{ display: 'grid', gridTemplateColumns: '96px minmax(0, 1fr)', gap: 10, padding: '8px 0', borderTop: '1px solid var(--border)' }}>
-                <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>{label}</span>
-                <span style={{ color: '#e5e7eb', fontSize: 12, overflowWrap: 'anywhere' }}>{value}</span>
-              </div>
-            ))}
-            <div style={{ display: 'flex', gap: 10, marginTop: 12, flexWrap: 'wrap' }}>
-              <Link href="/hermes/bootstrap" style={{ color: '#a5b4fc', fontSize: 12, textDecoration: 'none' }}>Bootstrap packet</Link>
-              <Link href="/hermes" style={{ color: '#a5b4fc', fontSize: 12, textDecoration: 'none' }}>Manifest</Link>
-            </div>
-          </div>
-
-          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 20 }}>
-            <h3 style={{ margin: '0 0 14px', fontSize: 14, fontWeight: 600, color: '#fff', display: 'flex', justifyContent: 'space-between' }}>
-              <span>Hermes Workstream</span>
-              <Link href="/progress" style={{ fontSize: 12, color: '#a5b4fc', textDecoration: 'none' }}>Progress</Link>
-            </h3>
-            {hermesEvents.length === 0 && <div style={{ color: 'var(--text-muted)', fontSize: 13 }}>No Hermes events yet. The inbox is ready.</div>}
-            {hermesEvents.map(event => (
-              <div key={event.id} style={{ borderTop: '1px solid var(--border)', padding: '10px 0' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10 }}>
-                  <span style={{ color: '#fff', fontSize: 13, fontWeight: 650 }}>{event.title}</span>
-                  <span style={{ color: '#6ee7b7', fontSize: 11, whiteSpace: 'nowrap' }}>{event.type.replace('_', ' ')}</span>
-                </div>
-                <div style={{ color: 'var(--text-muted)', fontSize: 12, lineHeight: 1.45, marginTop: 4 }}>{event.detail}</div>
-              </div>
+        <section style={{ ...panel, padding: 14, minWidth: 0 }}>
+          <PanelTitle title="Hermes Workstream" />
+          <div style={{ display: 'flex', gap: 7, overflowX: 'auto', marginBottom: 10 }}>
+            {(['all', 'tasks', 'github', 'products', 'system'] as WorkFilter[]).map(item => (
+              <button key={item} onClick={() => setFilter(item)} style={{ ...tabStyle, background: filter === item ? 'rgba(91,108,255,0.22)' : 'rgba(255,255,255,0.04)', color: filter === item ? '#fff' : muted }}>
+                {item}
+              </button>
             ))}
           </div>
-        </div>
-
-        {/* Session Summary + Quick Links */}
-        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 16 }}>
-
-          {/* Session summary */}
-          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 20 }}>
-            <h3 style={{ margin: '0 0 14px', fontSize: 14, fontWeight: 600, color: '#fff' }}>
-              🎩 Built This Session
-            </h3>
-            {(status?.session.summary || []).map((item, i) => (
-              <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 7, alignItems: 'flex-start' }}>
-                <span style={{ color: '#10b981', marginTop: 1, flexShrink: 0 }}>✓</span>
-                <span style={{ fontSize: 13, color: 'var(--text)' }}>{item}</span>
-              </div>
-            ))}
-            {!status && <div style={{ color: 'var(--text-muted)', fontSize: 13 }}>Loading...</div>}
-          </div>
-
-          {/* Quick links */}
-          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 20 }}>
-            <h3 style={{ margin: '0 0 14px', fontSize: 14, fontWeight: 600, color: '#fff' }}>Quick Access</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 8 }}>
-              {quickLinks.map(l => (
-                <Link key={l.href} href={l.href} style={{ textDecoration: 'none' }}>
-                  <div
-                    style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 8, padding: '10px 12px', cursor: 'pointer', transition: 'border-color 0.15s' }}
-                    onMouseEnter={e => (e.currentTarget.style.borderColor = '#6366f1')}
-                    onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}
-                  >
-                    <span style={{ fontSize: 18 }}>{l.emoji}</span>
-                    <div>
-                      <div style={{ fontSize: 13, fontWeight: 500, color: '#e5e5e5' }}>{l.label}</div>
-                      <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{l.desc}</div>
+          <div style={{ border: '1px solid rgba(93,121,148,0.24)', borderRadius: 8, overflow: 'hidden' }}>
+            {workstream.map(item => {
+              const Icon = sourceIcon(item.kind);
+              return (
+                <Link key={item.id} href={item.href} style={{ textDecoration: 'none' }}>
+                  <article style={{ display: 'grid', gridTemplateColumns: '42px minmax(0, 1fr) auto', gap: 12, padding: '13px 12px', borderBottom: '1px solid rgba(93,121,148,0.22)', color: '#e7edf7', alignItems: 'center' }}>
+                    <Icon size={24} color={item.kind.includes('product') ? '#cbd5e1' : item.kind.includes('task') ? '#86efac' : '#93c5fd'} />
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ color: '#fff', fontSize: 13, fontWeight: 750, textTransform: item.title.length < 18 ? 'capitalize' : 'none' }}>{item.title}</div>
+                      <div style={{ color: '#b5c0cf', fontSize: 12, marginTop: 3, fontStyle: 'italic', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.detail}</div>
                     </div>
-                  </div>
+                    <div style={{ textAlign: 'right', color: muted, fontSize: 11 }}>
+                      <span style={{ display: 'inline-block', color: '#a5b4fc', border: '1px solid rgba(165,180,252,0.22)', borderRadius: 999, padding: '2px 7px', marginBottom: 5 }}>{item.tag}</span>
+                      <div>{timeAgo(item.timestamp)}</div>
+                    </div>
+                  </article>
                 </Link>
-              ))}
-            </div>
+              );
+            })}
+            {workstream.length === 0 && <EmptyLine text="No workstream items for this filter." />}
           </div>
+          <Link href="/progress" style={{ display: 'block', width: 210, margin: '10px auto 0', textAlign: 'center', textDecoration: 'none', color: '#cbd5e1', border: '1px solid rgba(93,121,148,0.35)', borderRadius: 7, padding: '8px 12px', fontSize: 13 }}>
+            View full timeline
+          </Link>
+        </section>
 
+        <aside style={{ ...panel, padding: 14 }}>
+          <PanelTitle title="Revenue Engine" />
+          <Block title="Product Queue" href="/products">
+            {productQueue.map(product => (
+              <ProductQueueItem key={product.id} product={product} />
+            ))}
+            {productQueue.length === 0 && <EmptyLine text="Product queue is clear." />}
+          </Block>
+
+          <Block title="Top Products" href="/products">
+            {topProducts.map(product => (
+              <Link key={product.id} href="/products" style={{ ...smallRowStyle, textDecoration: 'none' }}>
+                <ProductThumb product={product} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ color: '#fff', fontSize: 13, fontWeight: 750 }}>{product.title}</div>
+                  <div style={{ color: '#7dd3fc', fontSize: 11, marginTop: 3 }}>Ready for storefront <ExternalLink size={11} /></div>
+                </div>
+                <strong style={{ color: '#86efac', fontSize: 16 }}>{product.price || money.format(0)}</strong>
+              </Link>
+            ))}
+          </Block>
+
+          <Block title="Recent Comments" href="/logs">
+            {comments.map(comment => (
+              <div key={comment.id} style={smallRowStyle}>
+                <div style={{ width: 28, height: 28, borderRadius: 999, display: 'grid', placeItems: 'center', background: '#6366f1', color: '#fff', fontSize: 11, fontWeight: 800 }}>
+                  {comment.author.slice(0, 2).toUpperCase()}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ color: '#fff', fontSize: 12, fontWeight: 700 }}>{comment.author} <span style={{ color: muted, fontWeight: 500, marginLeft: 6 }}>{timeAgo(comment.createdAt)}</span></div>
+                  <div style={{ color: '#b5c0cf', fontSize: 12, fontStyle: 'italic', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{comment.text}</div>
+                </div>
+              </div>
+            ))}
+            {comments.length === 0 && <EmptyLine text="No product comments yet." />}
+          </Block>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+            <MiniMetric label="Stripe revenue" value={money.format(revenue?.stripe?.summary.grossRevenue || 0)} />
+            <MiniMetric label="Customers" value={String(revenue?.stripe?.summary.customerCount || 0)} />
+          </div>
+        </aside>
+      </section>
+
+      <footer style={{ ...panel, marginTop: 12, padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, color: muted, fontSize: 12 }}>
+        <span><span style={{ color: '#4ade80' }}>●</span> Albert OS connected to Hermes</span>
+        <span>API: <span style={{ color: '#86efac' }}>{status?.proxy === 'online' ? 'Healthy' : loading ? 'Checking' : 'Offline'}</span></span>
+        <span>Version 1.0.0</span>
+      </footer>
+    </main>
+  );
+}
+
+function StatusTile({ icon: Icon, label, value, tone, active, href }: { icon: typeof Activity; label: string; value: string; tone: string; active: boolean; href: string }) {
+  return (
+    <Link href={href} style={{ display: 'grid', gridTemplateColumns: '38px minmax(0, 1fr)', gap: 12, alignItems: 'center', padding: '14px 18px', borderRight: '1px solid rgba(93,121,148,0.28)', textDecoration: 'none' }}>
+      <Icon size={28} color={tone} />
+      <div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 7, color: active ? tone : '#cbd5e1', fontWeight: 800, fontSize: 14 }}>
+          {active && <span style={{ width: 8, height: 8, borderRadius: 999, background: tone, boxShadow: `0 0 16px ${tone}` }} />}
+          {label}
         </div>
+        <div style={{ color: muted, fontSize: 12, marginTop: 4 }}>{value}</div>
       </div>
+    </Link>
+  );
+}
+
+function PanelTitle({ title, count }: { title: string; count?: number }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, margin: '2px 0 12px' }}>
+      <h2 style={{ color: '#fff', fontSize: 18, margin: 0, fontWeight: 850 }}>{title}</h2>
+      {typeof count === 'number' && count > 0 && <span style={{ background: '#a16207', color: '#fff', borderRadius: 999, padding: '3px 9px', fontSize: 12, fontWeight: 800 }}>{count}</span>}
     </div>
   );
 }
 
-function actionBtn(color: string, muted = false): React.CSSProperties {
-  return {
-    background: muted ? 'transparent' : `${color}22`,
-    border: `1px solid ${muted ? 'var(--border)' : color}`,
-    borderRadius: 6,
-    color: muted ? 'var(--text-muted)' : color,
-    fontSize: 12,
-    padding: '5px 12px',
-    cursor: 'pointer',
-    fontWeight: 500,
-  };
+function Block({ title, href, children }: { title: string; href?: string; children: React.ReactNode }) {
+  return (
+    <section style={{ background: 'rgba(255,255,255,0.035)', border: '1px solid rgba(93,121,148,0.24)', borderRadius: 8, padding: 10, marginBottom: 10 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'center', marginBottom: 8 }}>
+        <h3 style={{ margin: 0, color: '#fff', fontSize: 14, fontWeight: 800 }}>{title}</h3>
+        {href && <Link href={href} style={{ color: '#a5b4fc', fontSize: 12, textDecoration: 'none' }}>View all</Link>}
+      </div>
+      <div style={{ display: 'grid', gap: 8 }}>{children}</div>
+    </section>
+  );
 }
 
-const miniMetricStyle: React.CSSProperties = {
-  background: 'var(--surface-2)',
-  border: '1px solid var(--border)',
-  borderRadius: 8,
-  padding: '10px 12px',
+function ActionCard({ icon: Icon, title, detail, meta, button, href, tone }: { icon: typeof KeyRound; title: string; detail: string; meta: string; button: string; href: string; tone: string }) {
+  return (
+    <div style={smallRowStyle}>
+      <Icon size={22} color={tone} />
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ color: '#fff', fontSize: 13, fontWeight: 800 }}>{title}</div>
+        <div style={{ color: muted, fontSize: 12, lineHeight: 1.35 }}>{detail}</div>
+        <div style={{ color: '#8290a3', fontSize: 11, marginTop: 8 }}>{meta}</div>
+      </div>
+      <Link href={href} style={{ background: '#5b5ff0', border: '1px solid #6d72ff', color: '#fff', borderRadius: 7, padding: '8px 12px', textDecoration: 'none', fontSize: 12, fontWeight: 800 }}>{button}</Link>
+    </div>
+  );
+}
+
+function QuickAction({ icon: Icon, label, href }: { icon: typeof KeyRound; label: string; href: string }) {
+  return (
+    <Link href={href} style={{ display: 'flex', alignItems: 'center', gap: 10, color: '#e7edf7', textDecoration: 'none', background: 'rgba(255,255,255,0.045)', border: '1px solid rgba(93,121,148,0.28)', borderRadius: 7, padding: '12px 10px', fontSize: 13, fontWeight: 750 }}>
+      <Icon size={19} color="#818cf8" /> {label}
+    </Link>
+  );
+}
+
+function ProductQueueItem({ product }: { product: Product }) {
+  const progress = product.status === 'ready' ? 80 : product.status === 'needs_improvement' ? 55 : product.status === 'published' ? 100 : 25;
+  return (
+    <Link href="/products" style={{ ...smallRowStyle, textDecoration: 'none' }}>
+      <Package size={20} color="#94a3b8" />
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ color: '#fff', fontSize: 13, fontWeight: 750 }}>{product.title}</div>
+        <div style={{ color: product.status === 'needs_improvement' ? '#fbbf24' : '#93c5fd', fontSize: 11, marginTop: 3 }}>{product.status.replace('_', ' ')}</div>
+      </div>
+      <div style={{ width: 130 }}>
+        <div style={{ color: muted, fontSize: 12, marginBottom: 5 }}>{progress}%</div>
+        <div style={{ height: 7, borderRadius: 999, background: 'rgba(148,163,184,0.18)', overflow: 'hidden' }}>
+          <div style={{ width: `${progress}%`, height: '100%', borderRadius: 999, background: '#fbbf24' }} />
+        </div>
+      </div>
+    </Link>
+  );
+}
+
+function ProductThumb({ product }: { product: Product }) {
+  const words = product.title.split(/\s+/).slice(0, 2).join('\n').toUpperCase();
+  return (
+    <div style={{ width: 58, height: 58, borderRadius: 7, background: 'linear-gradient(135deg, #3730a3, #0f766e)', display: 'grid', placeItems: 'center', color: '#fff', fontSize: 10, fontWeight: 900, textAlign: 'center', whiteSpace: 'pre-line', lineHeight: 1.05, boxShadow: 'inset 0 0 28px rgba(255,255,255,0.15)' }}>
+      {words}
+    </div>
+  );
+}
+
+function MiniMetric({ label, value }: { label: string; value: string }) {
+  return (
+    <div style={{ border: '1px solid rgba(93,121,148,0.24)', borderRadius: 7, padding: 10, background: 'rgba(255,255,255,0.035)' }}>
+      <div style={{ color: '#86efac', fontSize: 20, fontWeight: 850 }}>{value}</div>
+      <div style={{ color: muted, fontSize: 11 }}>{label}</div>
+    </div>
+  );
+}
+
+function EmptyLine({ text }: { text: string }) {
+  return <div style={{ color: muted, fontSize: 13, padding: '10px 4px' }}>{text}</div>;
+}
+
+const smallRowStyle: React.CSSProperties = {
   display: 'flex',
-  flexDirection: 'column',
-  gap: 2,
-  color: 'var(--text-muted)',
-  fontSize: 11,
+  alignItems: 'center',
+  gap: 10,
+  background: 'rgba(15,27,39,0.72)',
+  border: '1px solid rgba(93,121,148,0.23)',
+  borderRadius: 7,
+  padding: 10,
+  color: '#e7edf7',
 };
+
+const tabStyle: React.CSSProperties = {
+  border: '1px solid rgba(93,121,148,0.28)',
+  borderRadius: 7,
+  padding: '8px 14px',
+  cursor: 'pointer',
+  fontSize: 12,
+  textTransform: 'capitalize',
+};
+
+function miniButton(color: string): React.CSSProperties {
+  return {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 5,
+    background: `${color}16`,
+    border: `1px solid ${color}55`,
+    color,
+    borderRadius: 7,
+    padding: '7px 10px',
+    cursor: 'pointer',
+    fontSize: 12,
+    fontWeight: 750,
+  };
+}
