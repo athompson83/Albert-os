@@ -23,6 +23,7 @@ export function buildHermesBootstrap(origin = 'https://albert-os.vercel.app') {
       purpose: 'Personal command center for Hermes work, revenue operations, digital products, credentials, tasks, progress, and app-generated outputs.',
       productionUrl: origin,
       localUrl: 'http://localhost:3001',
+      playbook: '/hermes/playbook',
     },
     hermesFilesFound: [
       {
@@ -48,19 +49,28 @@ export function buildHermesBootstrap(origin = 'https://albert-os.vercel.app') {
       note: 'No standalone Hermes Agent checkout was found under C:/Users/Adam during this pass; AlbertOS now exposes a complete host API for the connected Hermes process.',
     },
     instructionsForHermes: [
-      'Read /hermes/bootstrap first, then /hermes for the current manifest.',
+      'Read /hermes/bootstrap first, then /hermes/playbook for operating guidance, then /hermes for the current manifest.',
+      'Chat with Adam in plain conversational language. Do not expose run traces, capability routing, mode labels, or endpoint dumps unless Adam explicitly asks for technical details.',
+      'When Adam asks whether a connection exists, answer from AlbertOS state first, then name the relevant page or endpoint only if it helps.',
       'Use /hermes/tasks for Adam-facing tasks, approvals, and credential requests.',
       'Use /hermes/credentials to request or confirm credentials. Values sent by Adam are returned masked in UI state.',
+      'Use /hermes/distribution to check publishing platform connections. Adam adds those credentials in /content/distribute; AlbertOS masks values, stores them securely, logs the exchange, and updates Hermes events.',
       'Use /hermes/products to add, update, remove, or comment on digital products.',
       'Use /api/chat/stream for live Albert or agent conversations; pass agentId to talk to a specific agent.',
       'Use /api/progress?agent=albert or /api/progress?agent=hermes to filter work by agent.',
       'Use /api/progress/feedback to receive Adam feedback about progress; AlbertOS saves it to exchange logs and Hermes events.',
       'Use /api/logs/exchanges to read saved data exchanges. Product feedback, progress feedback, chat, Slack, Stripe syncs, and Hermes inbox updates are logged.',
       'Use /api/stripe/summary for Stripe CRM and revenue status. AlbertOS needs STRIPE_SECRET_KEY in the runtime environment.',
+      'Use /api/newsletter/publication and /api/newsletter/posts for Beehiiv newsletter checks and publishing when BEEHIIV_API_KEY and BEEHIIV_PUBLICATION_ID are configured.',
       'Use /api/marketing to see outreach, campaigns, prospect files, product assets, and revenue work.',
       'Use /hermes/inbox for general progress events or structured updates when no specialized endpoint fits.',
       'After any state-changing request, read /hermes/health or /api/status to confirm AlbertOS received the update.',
     ],
+    conversationContract: {
+      tone: 'Natural, concise, and collaborative. Answer Adam like an operating partner.',
+      avoid: ['run trace text', 'capability router narration', 'raw JSON unless requested', 'claiming an account is connected without checking state'],
+      defaultAnswerShape: ['direct answer', 'what AlbertOS can see', 'what Adam or Hermes should do next'],
+    },
     environmentForFullConnection: {
       albertOS: ['STRIPE_SECRET_KEY', 'SLACK_SIGNING_SECRET', 'SLACK_BOT_TOKEN', 'SLACK_DEFAULT_CHANNEL_ID'],
       hermes: ['ALBERT_OS_BASE_URL=https://albert-os.vercel.app', 'ALBERT_OS_BOOTSTRAP_URL=https://albert-os.vercel.app/hermes/bootstrap'],

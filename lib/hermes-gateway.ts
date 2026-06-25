@@ -6,6 +6,7 @@ import {
   findCapabilityForMessage,
   getCapabilities,
 } from '@/lib/capabilities';
+import { getDistributionSnapshot } from '@/lib/distribution';
 import { logExchange } from '@/lib/exchange-log';
 
 export type HermesAgent = {
@@ -175,6 +176,114 @@ function normalizeAgentLabels(reply: string) {
     .replace(/\boperator\b/g, 'Hermes')
     .replace(/\b3 agents\b/g, '1 agent')
     .replace(/Agent:\s*Hermes/gi, 'Agent: Hermes');
+}
+
+function isRouterTraceReply(reply: string) {
+  return /matched this request to|Run trace:|Mode:\s*on-demand|Endpoint:\s*\//i.test(reply);
+}
+
+function wantsCapabilityCatalog(normalized: string) {
+  return (
+    normalized.includes('capability') ||
+    normalized.includes('capabilities') ||
+    normalized.includes('what can you do') ||
+    normalized.includes('skills') ||
+    normalized.includes('tools') ||
+    normalized.includes('endpoint') ||
+    normalized.includes('api route')
+  );
+}
+
+function buildNaturalAlbertReply(message: string) {
+  const state = getHermesState();
+  const normalized = message.toLowerCase();
+  const openTasks = state.tasks.filter(task => !task.archivedAt && task.status !== 'done');
+  const credentialRequests = openTasks.filter(task => task.requestKind === 'credential');
+  const distribution = getDistributionSnapshot();
+  const connectedPlatforms = distribution.platforms
+    .filter(platform => platform.connection?.status === 'connected')
+    .map(platform => platform.name);
+
+  if (normalized.includes('beehiiv') || normalized.includes('beehiv') || normalized.includes('newsletter')) {
+    return [
+      'Yes. Beehiiv belongs in the Newsletter workflow.',
+      '',
+      'AlbertOS has these Beehiiv paths wired:',
+      '- /newsletter for drafting, reviewing, and saving newsletter content',
+      '- /api/newsletter/publication to check the Beehiiv publication connection',
+      '- /api/newsletter/posts to list or create Beehiiv posts when BEEHIIV_API_KEY and BEEHIIV_PUBLICATION_ID are set',
+      '',
+      'For Hermes: check /hermes/bootstrap, then use the newsletter endpoints above. If Beehiiv is not configured, ask Adam for BEEHIIV_API_KEY and BEEHIIV_PUBLICATION_ID through the Credentials page instead of guessing.',
+    ].join('\n');
+  }
+
+  if (normalized.includes('credential') || normalized.includes('connect account') || normalized.includes('distribution')) {
+    return [
+      connectedPlatforms.length
+        ? `Distribution Hub has ${connectedPlatforms.length} connected platform${connectedPlatforms.length === 1 ? '' : 's'}: ${connectedPlatforms.join(', ')}.`
+        : 'Distribution Hub is ready, but no publishing platforms are connected yet.',
+      '',
+      'Use /content/distribute to add platform credentials. When you save one, AlbertOS masks it, stores it securely, logs the exchange, and exposes connection status to Hermes at /hermes/distribution.',
+      credentialRequests.length
+        ? `There are also ${credentialRequests.length} open Hermes credential request${credentialRequests.length === 1 ? '' : 's'} on /credentials.`
+        : 'There are no extra Hermes credential requests beyond the platform connections right now.',
+    ].join('\n');
+  }
+
+  if (
+    normalized.includes('hermes') &&
+    (
+      normalized.includes('use the app') ||
+      normalized.includes('use albertos') ||
+      normalized.includes('knows') ||
+      normalized.includes('how to use') ||
+      normalized.includes('how should hermes use')
+    )
+  ) {
+    return [
+      'Hermes should treat AlbertOS as the operating surface, not just a chat window.',
+      '',
+      'The starting point is /hermes/bootstrap. That gives Hermes the current manifest, write contracts, task/product/credential endpoints, distribution status, Stripe status, and logging rules.',
+      '',
+      'The most important write paths are /hermes/tasks, /hermes/products, /hermes/credentials, /api/progress/feedback, /api/logs/exchanges, and /api/distribution. After any write, Hermes should confirm with /hermes/health or /api/status.',
+    ].join('\n');
+  }
+
+  if (normalized.includes('progress') || normalized.includes('what are you working') || normalized.includes('working on')) {
+    return buildProgressReply();
+  }
+
+  if (normalized.includes('product') || normalized.includes('download') || normalized.includes('sell')) {
+    const activeProducts = state.products.filter(product => product.status !== 'removed');
+    return [
+      `I can see ${activeProducts.length} active digital products in AlbertOS.`,
+      'Use /products to download, comment, approve, request improvements, or remove a product. Feedback there is sent to Albert and saved to the exchange logs.',
+      'Hermes can use /hermes/products for the same product state.',
+    ].join('\n');
+  }
+
+  if (normalized.includes('task') || normalized.includes('approval') || normalized.includes('need from me')) {
+    const preview = openTasks.slice(0, 4).map(task => `- ${task.title} (${task.priority}, ${task.status})`);
+    return [
+      openTasks.length ? `You have ${openTasks.length} open task${openTasks.length === 1 ? '' : 's'} in AlbertOS.` : 'I do not see open tasks right now.',
+      ...preview,
+      '',
+      'Open /tasks for the full list. If a task needs input, click it and submit the requested details; AlbertOS logs that handoff for Hermes.',
+    ].join('\n');
+  }
+
+  if (normalized.includes('stripe') || normalized.includes('revenue') || normalized.includes('customer')) {
+    return [
+      'Stripe is surfaced through /customers and /revenue.',
+      'Hermes can read /api/stripe/summary for customers, payments, and gross revenue. AlbertOS only shows a setup warning when STRIPE_SECRET_KEY is missing from the running deployment.',
+    ].join('\n');
+  }
+
+  return [
+    "I'm here with the AlbertOS command-center context.",
+    '',
+    "Ask me naturally about tasks, products, credentials, Distribution Hub, Beehiiv/newsletters, Stripe revenue, progress, or how Hermes should use the app. I'll answer like a working partner first, and keep the endpoint details available when they help.",
+  ].join('\n');
 }
 
 async function requestExternalGateway(message: string, agentId: string) {
@@ -603,6 +712,9 @@ export async function createGatewayReply(message: string, agentId = 'albert') {
   const external = await requestExternalGateway(message, agent.id);
 
   if (external.reply) {
+    if (isRouterTraceReply(external.reply)) {
+      return buildNaturalAlbertReply(message);
+    }
     return external.reply;
   }
 
@@ -617,11 +729,7 @@ export async function createGatewayReply(message: string, agentId = 'albert') {
   }
 
   if (
-    normalized.includes('capability') ||
-    normalized.includes('capabilities') ||
-    normalized.includes('what can you do') ||
-    normalized.includes('skills') ||
-    normalized.includes('tools')
+    wantsCapabilityCatalog(normalized)
   ) {
     return buildCapabilitiesReply();
   }
@@ -658,29 +766,20 @@ export async function createGatewayReply(message: string, agentId = 'albert') {
       : `${agent.name} sees no open tasks right now.`;
   }
 
-  const matchedCapability = findCapabilityForMessage(message);
+  const matchedCapability = wantsCapabilityCatalog(normalized) ? findCapabilityForMessage(message) : null;
   if (matchedCapability) {
     const trace = buildCapabilityTrace(matchedCapability, 'chat');
     return [
-      `${agent.name} matched this request to ${matchedCapability.name}.`,
+      `${matchedCapability.name} is available in AlbertOS.`,
       matchedCapability.description,
       '',
-      `Run trace: ${trace.id}`,
-      `Agent: ${trace.agentId}`,
-      `Mode: ${trace.mode}`,
       `Status: ${trace.status.replace('_', ' ')}`,
       matchedCapability.endpoint ? `Endpoint: ${matchedCapability.endpoint}` : '',
       matchedCapability.nextAction ? `Needs Adam: ${matchedCapability.nextAction}` : '',
     ].filter(Boolean).join('\n');
   }
 
-  const openTasks = state.tasks.filter(task => !task.archivedAt && task.status !== 'done').length;
-  const capabilitySummary = getCapabilities().filter(capability => capability.status === 'ready').length;
-  return [
-    `Albert OS local mode is online, but no live Hermes gateway URL is configured for chat.`,
-    `Right now the local command center can see ${openTasks} open tasks, ${state.workflows.length} workflow, ${state.agents.length} agent, and ${capabilitySummary} ready capabilities.`,
-    `Set ALBERT_GATEWAY_URL or HERMES_GATEWAY_URL to the active Hermes HTTP API when you want live Hermes replies here.`,
-  ].join('\n');
+  return buildNaturalAlbertReply(message);
 }
 
 export function recordChat(message: string, reply: string, project = 'General', attachments?: unknown[]) {
