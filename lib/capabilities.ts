@@ -165,8 +165,18 @@ export function getCapabilitySummary() {
 export function findCapabilityForMessage(message: string) {
   const normalized = message.toLowerCase();
   return getCapabilities().find(capability =>
-    capability.keywords.some(keyword => normalized.includes(keyword.toLowerCase())),
+    capability.keywords.some(keyword => matchesKeyword(normalized, keyword)),
   );
+}
+
+function matchesKeyword(normalizedMessage: string, keyword: string) {
+  const normalizedKeyword = keyword.toLowerCase();
+  if (normalizedKeyword.includes(' ')) return normalizedMessage.includes(normalizedKeyword);
+  return new RegExp(`(^|[^a-z0-9])${escapeRegExp(normalizedKeyword)}(?=[^a-z0-9]|$)`).test(normalizedMessage);
+}
+
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 export function buildCapabilityTrace(capability: AlbertCapability, source = 'chat', result?: string): CapabilityTrace {

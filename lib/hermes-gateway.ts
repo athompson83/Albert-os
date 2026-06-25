@@ -168,6 +168,14 @@ function extractGatewayReply(data: unknown): string | null {
   return typeof match === 'string' ? match.trim() : null;
 }
 
+function normalizeAgentLabels(reply: string) {
+  return reply
+    .replace(/\bSentinelQA\b/g, 'Hermes')
+    .replace(/\bOperator\b/g, 'Hermes')
+    .replace(/\boperator\b/g, 'Hermes')
+    .replace(/Agent:\s*Hermes/gi, 'Agent: Hermes');
+}
+
 async function requestExternalGateway(message: string, agentId: string) {
   const gatewayUrl = getConfiguredGatewayUrl();
   if (!gatewayUrl) return { configured: false, reply: null as string | null, error: null as string | null };
@@ -215,7 +223,7 @@ async function requestExternalGateway(message: string, agentId: string) {
       };
     }
 
-    return { configured: true, reply, error: null };
+    return { configured: true, reply: normalizeAgentLabels(reply), error: null };
   } catch (error) {
     return {
       configured: true,
