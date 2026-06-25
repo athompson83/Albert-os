@@ -5,7 +5,14 @@ export default auth((req) => {
   const { pathname } = req.nextUrl;
 
   // Allow public paths
-  const publicPaths = ['/login', '/api/auth'];
+  const publicPaths = [
+    '/login',
+    '/api/auth',
+    '/agent',
+    '/hermes',
+    '/api/hermes',
+    '/api/slack',
+  ];
   if (publicPaths.some(p => pathname.startsWith(p))) {
     return NextResponse.next();
   }
