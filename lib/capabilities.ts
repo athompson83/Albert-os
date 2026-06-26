@@ -85,6 +85,17 @@ const capabilities: AlbertCapability[] = [
     keywords: ['content', 'newsletter', 'draft', 'post', 'library'],
   },
   {
+    id: 'creative-tools',
+    name: 'Creative Content Tools',
+    description: 'Creates image jobs, AI video edit/generation plans, viral clip analysis jobs, and brand-safe content optimization.',
+    agentId: 'hermes',
+    mode: 'on-demand',
+    status: 'ready',
+    endpoint: '/api/content-tools',
+    sources: ['brand kit', 'image generator', 'video editor', 'content optimizer'],
+    keywords: ['image', 'generate image', 'video', 'video editor', 'viral clip', 'rebrand', 'optimizer', 'brand kit'],
+  },
+  {
     id: 'product-review',
     name: 'Product Review',
     description: 'Lists, downloads, approves, removes, and comments on Hermes-created digital products.',

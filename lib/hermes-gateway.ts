@@ -262,6 +262,22 @@ function buildNaturalAlbertReply(message: string) {
     ].join('\n');
   }
 
+  if (
+    normalized.includes('image generator') ||
+    normalized.includes('video editor') ||
+    normalized.includes('content optimizer') ||
+    normalized.includes('creative tools') ||
+    normalized.includes('rebrand')
+  ) {
+    return [
+      'Creative Tools are available in AlbertOS under /content/tools.',
+      '',
+      'Hermes can use /hermes/content-tools to create image jobs, video jobs, viral clip jobs, and brand optimizer jobs. The brand kit lives at /api/content-tools/brand so colors, logo URL, voice, audience, and design rules can be reused across outputs.',
+      '',
+      'Image rendering uses OPENAI_API_KEY when configured. Video rendering needs a connected provider key such as FAL_KEY, RUNWAY_API_KEY, or DESCRIPT_API_KEY.',
+    ].join('\n');
+  }
+
   if (normalized.includes('task') || normalized.includes('approval') || normalized.includes('need from me')) {
     const preview = openTasks.slice(0, 4).map(task => `- ${task.title} (${task.priority}, ${task.status})`);
     return [

@@ -1,13 +1,12 @@
 'use client';
 
-import { useState } from 'react';
 import TopBar from '@/components/TopBar';
 import Link from 'next/link';
 import useIsMobile from '@/components/useIsMobile';
 import {
   BookOpen, Plus, Mic, Upload, BarChart3, Users, Globe, Zap,
-  CheckCircle2, AlertCircle, ChevronRight, Layers, FileText,
-  Brain, Tv
+  AlertCircle, ChevronRight, Layers, FileText,
+  Brain, Tv, Wand2
 } from 'lucide-react';
 
 const PLATFORMS = [
@@ -21,14 +20,13 @@ const PLATFORMS = [
 
 const WORKFLOWS = [
   { icon: <FileText size={14} />, label: 'Create Lesson', sub: 'Text, video, ECG blocks', href: '/content/studio' },
-  { icon: <Brain size={14} />, label: 'AI Generate', sub: 'Quiz, study guide, case study', href: '/content/studio' },
+  { icon: <Brain size={14} />, label: 'Creative Tools', sub: 'Images, videos, rebrand', href: '/content/tools' },
   { icon: <Globe size={14} />, label: 'Publish Everywhere', sub: 'One click → 6 platforms', href: '/content/distribute' },
   { icon: <BarChart3 size={14} />, label: 'Track Revenue', sub: 'Unified analytics', href: '/content' },
 ];
 
 export default function ContentPage() {
   const isMobile = useIsMobile();
-  const [connecting, setConnecting] = useState<string | null>(null);
 
   const stats = [
     { label: 'Courses', value: '0', icon: <Layers size={16} />, color: '#a5b4fc' },
@@ -77,6 +75,9 @@ export default function ContentPage() {
           </Link>
           <Link href="/content/library" style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: '10px 18px', color: '#e5e5e5', fontSize: 14, fontWeight: 500, textDecoration: 'none' }}>
             <Upload size={16} style={{ color: '#a5b4fc' }} /> Upload ECG
+          </Link>
+          <Link href="/content/tools" style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: '10px 18px', color: '#e5e5e5', fontSize: 14, fontWeight: 500, textDecoration: 'none' }}>
+            <Wand2 size={16} style={{ color: '#34d399' }} /> Creative Tools
           </Link>
           <Link href="/content/distribute" style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: '10px 18px', color: '#e5e5e5', fontSize: 14, fontWeight: 500, textDecoration: 'none' }}>
             <Zap size={16} style={{ color: '#f59e0b' }} /> Publish All Pending
@@ -147,12 +148,9 @@ export default function ContentPage() {
                   <span style={{ fontSize: 11, color: '#ef4444', display: 'flex', alignItems: 'center', gap: 3 }}>
                     <AlertCircle size={11} /> Not Connected
                   </span>
-                  <button
-                    onClick={() => setConnecting(p.name)}
-                    style={{ fontSize: 11, background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.35)', borderRadius: 5, padding: '3px 10px', color: '#a5b4fc', cursor: 'pointer' }}
-                  >
-                    {connecting === p.name ? 'Opening...' : 'Connect'}
-                  </button>
+                  <Link href="/content/distribute" style={{ fontSize: 11, background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.35)', borderRadius: 5, padding: '3px 10px', color: '#a5b4fc', textDecoration: 'none' }}>
+                    Connect
+                  </Link>
                 </div>
               ))}
             </div>

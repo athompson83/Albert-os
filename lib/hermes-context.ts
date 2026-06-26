@@ -56,6 +56,8 @@ export function buildHermesBootstrap(origin = 'https://albert-os.vercel.app') {
       'Use /hermes/credentials to request or confirm credentials. Values sent by Adam are returned masked in UI state.',
       'Use /hermes/distribution to check publishing platform connections. Adam adds those credentials in /content/distribute; AlbertOS masks values, stores them securely, logs the exchange, and updates Hermes events.',
       'Use /hermes/products to add, update, remove, or comment on digital products.',
+      'Use /hermes/content-tools to create image, video, and content optimizer jobs. Use /api/content-tools/brand to read or save brand colors, logo URL, voice, audience, and design rules.',
+      'For image generation, AlbertOS can call OpenAI Images when OPENAI_API_KEY is configured. For video rendering, connect a video provider key such as FAL_KEY, RUNWAY_API_KEY, or DESCRIPT_API_KEY.',
       'Use /api/chat/stream for live Albert or agent conversations; pass agentId to talk to a specific agent.',
       'Use /api/progress?agent=albert or /api/progress?agent=hermes to filter work by agent.',
       'Use /api/progress/feedback to receive Adam feedback about progress; AlbertOS saves it to exchange logs and Hermes events.',
@@ -72,7 +74,7 @@ export function buildHermesBootstrap(origin = 'https://albert-os.vercel.app') {
       defaultAnswerShape: ['direct answer', 'what AlbertOS can see', 'what Adam or Hermes should do next'],
     },
     environmentForFullConnection: {
-      albertOS: ['STRIPE_SECRET_KEY', 'SLACK_SIGNING_SECRET', 'SLACK_BOT_TOKEN', 'SLACK_DEFAULT_CHANNEL_ID'],
+      albertOS: ['STRIPE_SECRET_KEY', 'SLACK_SIGNING_SECRET', 'SLACK_BOT_TOKEN', 'SLACK_DEFAULT_CHANNEL_ID', 'OPENAI_API_KEY', 'FAL_KEY or RUNWAY_API_KEY or DESCRIPT_API_KEY'],
       hermes: ['ALBERT_OS_BASE_URL=https://albert-os.vercel.app', 'ALBERT_OS_BOOTSTRAP_URL=https://albert-os.vercel.app/hermes/bootstrap'],
       slackApp: {
         eventRequestUrl: withOrigin(origin, '/api/slack/events'),

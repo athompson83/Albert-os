@@ -21,6 +21,8 @@ AlbertOS is Adam's command center. Use the app state before answering, and keep 
 - Tasks: `/tasks`, `/hermes/tasks`
 - Credentials: `/credentials`, `/hermes/credentials`
 - Distribution Hub: `/content/distribute`, `/hermes/distribution`, `/api/distribution`
+- Creative Tools: `/content/tools`, `/hermes/content-tools`, `/api/content-tools`
+- Brand Kit: `/api/content-tools/brand`
 - Products: `/products`, `/hermes/products`
 - Progress: `/progress`, `/api/progress`, `/api/progress/feedback`
 - Logs: `/logs`, `/api/logs/exchanges`
@@ -44,3 +46,13 @@ Beehiiv is managed through the Newsletter workflow. Hermes should check:
 - `POST /api/newsletter/posts`
 
 If Beehiiv is not configured, request `BEEHIIV_API_KEY` and `BEEHIIV_PUBLICATION_ID`.
+
+## Creative Tools
+
+- Create image jobs with `POST /hermes/content-tools` and `kind=image`.
+- Create video jobs with `POST /hermes/content-tools` and `kind=video`.
+- Use video modes: `text_to_video`, `similar_from_link`, and `viral_clip`.
+- Rebrand existing content with `POST /hermes/content-tools` and `kind=optimizer`.
+- Read or save the brand kit at `/api/content-tools/brand`.
+
+Image rendering uses `OPENAI_API_KEY` when configured. Video rendering needs a provider key such as `FAL_KEY`, `RUNWAY_API_KEY`, or `DESCRIPT_API_KEY`.

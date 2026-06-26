@@ -1,4 +1,5 @@
 import { getCapabilities, getCapabilitySummary } from '@/lib/capabilities';
+import { getContentToolsSnapshot } from '@/lib/content-tools';
 import { getDistributionSnapshot } from '@/lib/distribution';
 import { getHermesState } from '@/lib/hermes-gateway';
 
@@ -8,6 +9,7 @@ export function buildHermesManifest() {
   const credentialTasks = openTasks.filter(task => task.requestKind === 'credential');
   const products = state.products.filter(product => product.status !== 'removed');
   const distribution = getDistributionSnapshot();
+  const contentTools = getContentToolsSnapshot();
 
   return {
     ok: true,
@@ -26,6 +28,8 @@ export function buildHermesManifest() {
       productsReadyForReview: products.filter(product => product.status === 'ready' || product.status === 'needs_improvement').length,
       distributionConnected: distribution.connected,
       distributionPlatforms: distribution.total,
+      contentToolJobs: contentTools.recentJobs.length,
+      brandProfile: contentTools.brand.name,
       capabilities: getCapabilitySummary(),
     },
     endpoints: {
@@ -49,6 +53,10 @@ export function buildHermesManifest() {
       stripeSummary: '/api/stripe/summary',
       customers: '/customers',
       marketing: '/api/marketing',
+      contentTools: '/hermes/content-tools',
+      contentToolsApi: '/api/content-tools',
+      contentToolsUi: '/content/tools',
+      brandProfile: '/api/content-tools/brand',
       distribution: '/hermes/distribution',
       distributionApi: '/api/distribution',
       progress: '/api/progress',
@@ -68,6 +76,8 @@ export function buildHermesManifest() {
       agentCreate: { method: 'POST', endpoint: '/hermes/agents', required: ['name'] },
       inboxUpdate: { method: 'POST', endpoint: '/hermes/inbox', required: ['title'] },
       liveChat: { method: 'POST', endpoint: '/api/chat/stream', required: ['message'], optional: ['agentId', 'attachments'] },
+      contentToolJob: { method: 'POST', endpoint: '/hermes/content-tools', required: ['kind'], optional: ['prompt', 'mode', 'sourceUrl', 'sourceFileName', 'transcript', 'content'] },
+      brandProfile: { method: 'POST', endpoint: '/api/content-tools/brand', required: ['name'], optional: ['logoUrl', 'primaryColor', 'secondaryColor', 'accentColor', 'voice', 'audience', 'designNotes'] },
       progressFeedback: { method: 'POST', endpoint: '/api/progress/feedback', required: ['message'], optional: ['agentId', 'relatedId'] },
       logExchange: { method: 'POST', endpoint: '/api/logs/exchanges', required: ['summary'], optional: ['kind', 'source', 'channel', 'targetAgentId', 'payload'] },
       slackSlashCommand: { method: 'POST', endpoint: '/api/slack/commands', required: ['text'] },
@@ -83,6 +93,11 @@ export function buildHermesManifest() {
         accessAvailable: Boolean(platform.connection?.accessAvailable),
         updatedAt: platform.connection?.updatedAt,
       })),
+    },
+    contentTools: {
+      brand: contentTools.brand,
+      providers: contentTools.providers,
+      recentJobs: contentTools.recentJobs.slice(0, 5),
     },
     recentEvents: state.events.slice(0, 10),
   };
