@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 
 const DEFAULT_PROTECTED_HOSTS = [
   'albert-os.vercel.app',
+  'assemblexy.com',
   'localhost:3001',
   'localhost:3000',
   '127.0.0.1:3001',
