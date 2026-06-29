@@ -1,4 +1,5 @@
 import { getCapabilities, getCapabilitySummary } from '@/lib/capabilities';
+import { getAppRequestsSnapshot } from '@/lib/app-requests';
 import { getContentToolsSnapshot } from '@/lib/content-tools';
 import { getDistributionSnapshot } from '@/lib/distribution';
 import { getHermesState } from '@/lib/hermes-gateway';
@@ -10,6 +11,7 @@ export function buildHermesManifest() {
   const products = state.products.filter(product => product.status !== 'removed');
   const distribution = getDistributionSnapshot();
   const contentTools = getContentToolsSnapshot();
+  const appRequests = getAppRequestsSnapshot();
 
   return {
     ok: true,
@@ -30,6 +32,8 @@ export function buildHermesManifest() {
       distributionPlatforms: distribution.total,
       contentToolJobs: contentTools.recentJobs.length,
       brandProfile: contentTools.brand.name,
+      appRequestsQueued: appRequests.counts.queued,
+      appRequestsBlocked: appRequests.counts.blocked,
       capabilities: getCapabilitySummary(),
     },
     endpoints: {
@@ -47,6 +51,9 @@ export function buildHermesManifest() {
       capabilities: '/hermes/capabilities',
       credentials: '/hermes/credentials',
       products: '/hermes/products',
+      appRequests: '/hermes/app-requests',
+      appRequestsApi: '/api/app-requests',
+      appRequestsUi: '/apps',
       events: '/hermes/events',
       inbox: '/hermes/inbox',
       revenue: '/api/revenue',
@@ -76,6 +83,7 @@ export function buildHermesManifest() {
       agentCreate: { method: 'POST', endpoint: '/hermes/agents', required: ['name'] },
       inboxUpdate: { method: 'POST', endpoint: '/hermes/inbox', required: ['title'] },
       liveChat: { method: 'POST', endpoint: '/api/chat/stream', required: ['message'], optional: ['agentId', 'attachments'] },
+      appRequest: { method: 'POST', endpoint: '/hermes/app-requests', required: ['targetApp', 'title'], optional: ['instructions', 'requestType', 'priority', 'metadata'] },
       contentToolJob: { method: 'POST', endpoint: '/hermes/content-tools', required: ['kind'], optional: ['prompt', 'mode', 'sourceUrl', 'sourceFileName', 'transcript', 'content'] },
       brandProfile: { method: 'POST', endpoint: '/api/content-tools/brand', required: ['name'], optional: ['logoUrl', 'primaryColor', 'secondaryColor', 'accentColor', 'voice', 'audience', 'designNotes'] },
       progressFeedback: { method: 'POST', endpoint: '/api/progress/feedback', required: ['message'], optional: ['agentId', 'relatedId'] },
@@ -93,6 +101,12 @@ export function buildHermesManifest() {
         accessAvailable: Boolean(platform.connection?.accessAvailable),
         updatedAt: platform.connection?.updatedAt,
       })),
+    },
+    appAccessPolicy: appRequests.policy,
+    appRequests: {
+      counts: appRequests.counts,
+      recentRequests: appRequests.recentRequests.slice(0, 8),
+      endpoints: appRequests.endpoints,
     },
     contentTools: {
       brand: contentTools.brand,

@@ -32,7 +32,7 @@ export async function GET() {
       events: hermes.events.slice(0, 5),
       bootstrap: '/hermes/bootstrap',
       inbox: '/hermes/inbox',
-      endpoints: ['/agent', '/hermes/bootstrap', '/hermes/agents', '/hermes/tasks', '/hermes/credentials', '/hermes/products', '/hermes/events', '/hermes/inbox'],
+      endpoints: ['/agent', '/hermes/bootstrap', '/hermes/agents', '/hermes/tasks', '/hermes/credentials', '/hermes/products', '/hermes/app-requests', '/hermes/events', '/hermes/inbox'],
     },
     agents: hermes.agents.length || countMatches(status, /Agent:/g) || 1,
     workflows: hermes.workflows.length || countMatches(summary, /^\d+\.\s+\*\*/gm) || 0,

@@ -72,7 +72,14 @@ export type HermesProduct = {
 
 export type HermesEvent = {
   id: string;
-  type: 'task_updated' | 'credential_updated' | 'product_updated' | 'status' | 'hermes_inbox';
+  type:
+    | 'task_updated'
+    | 'credential_updated'
+    | 'product_updated'
+    | 'status'
+    | 'hermes_inbox'
+    | 'app_request_created'
+    | 'app_request_blocked';
   title: string;
   detail: string;
   timestamp: string;
@@ -231,6 +238,23 @@ function buildNaturalAlbertReply(message: string) {
   }
 
   if (
+    normalized.includes('app request') ||
+    normalized.includes('coding agent') ||
+    normalized.includes('computer') ||
+    normalized.includes('apoc') ||
+    normalized.includes('proficiencyai') ||
+    normalized.includes('baseproficiencyai')
+  ) {
+    return [
+      'AlbertOS has a guarded Hermes app-request lane now.',
+      '',
+      'Hermes can ask the coding agent to work through /hermes/app-requests. Allowed requests create a visible Adam task and are saved to the logs.',
+      '',
+      'Protected workspaces are blocked at the API: APoC Checklist, ProficiencyAI, and Baseproficiencyai. If Hermes tries one of those, AlbertOS records the blocked request instead of acting on it.',
+    ].join('\n');
+  }
+
+  if (
     normalized.includes('hermes') &&
     (
       normalized.includes('use the app') ||
@@ -245,7 +269,9 @@ function buildNaturalAlbertReply(message: string) {
       '',
       'The starting point is /hermes/bootstrap. That gives Hermes the current manifest, write contracts, task/product/credential endpoints, distribution status, Stripe status, and logging rules.',
       '',
-      'The most important write paths are /hermes/tasks, /hermes/products, /hermes/credentials, /api/progress/feedback, /api/logs/exchanges, and /api/distribution. After any write, Hermes should confirm with /hermes/health or /api/status.',
+      'The most important write paths are /hermes/tasks, /hermes/products, /hermes/credentials, /hermes/app-requests, /api/progress/feedback, /api/logs/exchanges, and /api/distribution. After any write, Hermes should confirm with /hermes/health or /api/status.',
+      '',
+      'Hermes must not request or operate in APoC Checklist, ProficiencyAI, or Baseproficiencyai. Those are protected workspaces.',
     ].join('\n');
   }
 

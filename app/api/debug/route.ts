@@ -17,7 +17,7 @@ export async function GET() {
     builtinGateway: {
       reachable: true,
       service: 'Albert Hermes HTTP API',
-      endpoints: ['/agent', '/hermes/agents', '/hermes/tasks', '/hermes/workflows', '/hermes/chats', '/hermes/history', '/hermes/credentials', '/hermes/products', '/hermes/events'],
+      endpoints: ['/agent', '/hermes/agents', '/hermes/tasks', '/hermes/workflows', '/hermes/chats', '/hermes/history', '/hermes/credentials', '/hermes/products', '/hermes/app-requests', '/hermes/events'],
       agents: state.agents.length,
       tasks: state.tasks.length,
       workflows: state.workflows.length,

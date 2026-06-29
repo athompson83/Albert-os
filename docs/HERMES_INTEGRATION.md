@@ -16,11 +16,20 @@ AlbertOS exposes a Hermes-friendly HTTP surface so Hermes can discover the app, 
 - `POST /api/chat/stream` for live Albert or agent conversations. Body: `{ "message": "...", "agentId": "albert" }`.
 - `POST /api/progress/feedback` for Adam feedback on progress. Body: `{ "message": "...", "agentId": "albert" }`.
 - `POST /api/logs/exchanges` for any custom exchange Hermes wants to preserve. Body: `{ "summary": "...", "kind": "custom", "source": "hermes" }`.
+- `POST /hermes/app-requests` for Hermes requests to the AlbertOS coding agent. Body: `{ "targetApp": "GitHub", "title": "...", "instructions": "...", "requestType": "coding", "priority": "medium" }`.
 - `POST/PATCH /hermes/tasks`
 - `POST/PATCH /hermes/credentials`
 - `POST/PATCH /hermes/products`
 - `POST/PATCH /hermes/workflows`
 - `POST /hermes/inbox`
+
+## Protected Apps
+
+Hermes may request work in AlbertOS and connected apps through `/hermes/app-requests`, but these workspaces are blocked by policy and logged if requested:
+
+- APoC Checklist
+- ProficiencyAI
+- Baseproficiencyai
 
 ## Agent Work Visibility
 
@@ -73,3 +82,4 @@ The OpenJarvis adapter expects a separate Hermes Agent checkout through `HERMES_
 - `/progress`: GitHub/status/report feed with an agent filter.
 - `/customers`: Stripe CRM.
 - `/marketing`: campaigns, outreach, prospect lists, and product marketing assets.
+- `/apps`: connected apps, credential entry, Hermes app requests, and protected-app policy.

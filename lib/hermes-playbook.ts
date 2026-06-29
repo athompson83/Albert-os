@@ -20,6 +20,7 @@ AlbertOS is Adam's command center. Use the app state before answering, and keep 
 
 - Tasks: /tasks, /hermes/tasks
 - Credentials: /credentials, /hermes/credentials
+- Hermes App Requests: /apps, /hermes/app-requests, /api/app-requests
 - Distribution Hub: /content/distribute, /hermes/distribution, /api/distribution
 - Creative Tools: /content/tools, /hermes/content-tools, /api/content-tools
 - Brand Kit: /api/content-tools/brand
@@ -29,6 +30,14 @@ AlbertOS is Adam's command center. Use the app state before answering, and keep 
 - Stripe CRM: /customers, /revenue, /api/stripe/summary
 - Beehiiv/newsletter: /newsletter, /api/newsletter/publication, /api/newsletter/posts
 - Marketing: /marketing, /api/marketing
+
+## App Requests and Protected Apps
+
+- Hermes may ask the AlbertOS coding agent to work in allowed apps with POST /hermes/app-requests.
+- Required body: targetApp and title.
+- Useful optional fields: instructions, requestType, priority, metadata.
+- Allowed requests create a visible Adam task and are saved to exchange logs.
+- Do not request or operate in APoC Checklist, ProficiencyAI, or Baseproficiencyai. AlbertOS blocks and logs those requests.
 
 ## Credential Handling
 

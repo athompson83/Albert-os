@@ -53,6 +53,8 @@ export function buildHermesBootstrap(origin = 'https://albert-os.vercel.app') {
       'Chat with Adam in plain conversational language. Do not expose run traces, capability routing, mode labels, or endpoint dumps unless Adam explicitly asks for technical details.',
       'When Adam asks whether a connection exists, answer from AlbertOS state first, then name the relevant page or endpoint only if it helps.',
       'Use /hermes/tasks for Adam-facing tasks, approvals, and credential requests.',
+      'Use /hermes/app-requests when Hermes needs the AlbertOS coding agent to work in an allowed app. Allowed requests create a visible Adam task and an exchange log.',
+      'Do not request or operate in APoC Checklist, ProficiencyAI, or Baseproficiencyai. These protected workspaces are blocked at /hermes/app-requests.',
       'Use /hermes/credentials to request or confirm credentials. Values sent by Adam are returned masked in UI state.',
       'Use /hermes/distribution to check publishing platform connections. Adam adds those credentials in /content/distribute; AlbertOS masks values, stores them securely, logs the exchange, and updates Hermes events.',
       'Use /hermes/products to add, update, remove, or comment on digital products.',
@@ -61,7 +63,7 @@ export function buildHermesBootstrap(origin = 'https://albert-os.vercel.app') {
       'Use /api/chat/stream for live Albert or agent conversations; pass agentId to talk to a specific agent.',
       'Use /api/progress?agent=albert or /api/progress?agent=hermes to filter work by agent.',
       'Use /api/progress/feedback to receive Adam feedback about progress; AlbertOS saves it to exchange logs and Hermes events.',
-      'Use /api/logs/exchanges to read saved data exchanges. Product feedback, progress feedback, chat, Slack, Stripe syncs, and Hermes inbox updates are logged.',
+      'Use /api/logs/exchanges to read saved data exchanges. Product feedback, progress feedback, app requests, chat, Slack, Stripe syncs, and Hermes inbox updates are logged.',
       'Use /api/stripe/summary for Stripe CRM and revenue status. AlbertOS needs STRIPE_SECRET_KEY in the runtime environment.',
       'Use /api/newsletter/publication and /api/newsletter/posts for Beehiiv newsletter checks and publishing when BEEHIIV_API_KEY and BEEHIIV_PUBLICATION_ID are configured.',
       'Use /api/marketing to see outreach, campaigns, prospect files, product assets, and revenue work.',
@@ -70,7 +72,7 @@ export function buildHermesBootstrap(origin = 'https://albert-os.vercel.app') {
     ],
     conversationContract: {
       tone: 'Natural, concise, and collaborative. Answer Adam like an operating partner.',
-      avoid: ['run trace text', 'capability router narration', 'raw JSON unless requested', 'claiming an account is connected without checking state'],
+      avoid: ['run trace text', 'capability router narration', 'raw JSON unless requested', 'claiming an account is connected without checking state', 'touching APoC Checklist or ProficiencyAI'],
       defaultAnswerShape: ['direct answer', 'what AlbertOS can see', 'what Adam or Hermes should do next'],
     },
     environmentForFullConnection: {

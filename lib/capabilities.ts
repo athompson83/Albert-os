@@ -74,6 +74,17 @@ const capabilities: AlbertCapability[] = [
     keywords: ['agent', 'agents', 'registry', 'persona', 'context'],
   },
   {
+    id: 'hermes-app-requests',
+    name: 'Hermes App Requests',
+    description: 'Lets Hermes ask the AlbertOS coding agent to work in allowed apps while blocking APoC Checklist and ProficiencyAI.',
+    agentId: 'albert',
+    mode: 'on-demand',
+    status: 'ready',
+    endpoint: '/hermes/app-requests',
+    sources: ['app access policy', 'task queue', 'exchange logs'],
+    keywords: ['app request', 'coding agent', 'computer', 'protected app', 'apoc', 'proficiencyai', 'baseproficiencyai', 'github', 'vercel', 'stripe', 'slack', 'connected apps'],
+  },
+  {
     id: 'content-ops',
     name: 'Content Operations',
     description: 'Supports content generation, library review, newsletter drafts, and distribution workflows.',

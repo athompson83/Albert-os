@@ -1,10 +1,11 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { ComponentType, CSSProperties } from 'react';
+import type { ComponentType, CSSProperties, FormEvent } from 'react';
 import Link from 'next/link';
 import {
   AlertCircle,
+  Ban,
   CheckCircle2,
   DollarSign,
   ExternalLink,
@@ -14,6 +15,7 @@ import {
   Megaphone,
   MessagesSquare,
   RefreshCw,
+  Send,
   Zap,
 } from 'lucide-react';
 import TopBar from '@/components/TopBar';
@@ -76,6 +78,45 @@ type Snapshot = {
     connected: number;
     total: number;
     platforms: DistributionPlatform[];
+  };
+  appRequests?: AppRequestsSnapshot;
+};
+
+type AppAccessItem = {
+  id: string;
+  name: string;
+  category: string;
+  href?: string;
+  allowed: boolean;
+  reason?: string;
+};
+
+type AppRequest = {
+  id: string;
+  targetApp: string;
+  title: string;
+  instructions: string;
+  requestType: string;
+  priority: 'high' | 'medium' | 'low';
+  status: 'queued' | 'in_progress' | 'done' | 'blocked';
+  createdBy: string;
+  createdAt: string;
+  blockedReason?: string;
+  relatedTaskId?: string;
+};
+
+type AppRequestsSnapshot = {
+  policy: {
+    allowedApps: AppAccessItem[];
+    blockedApps: AppAccessItem[];
+    rules: string[];
+  };
+  recentRequests: AppRequest[];
+  counts: {
+    total: number;
+    queued: number;
+    blocked: number;
+    done: number;
   };
 };
 
@@ -161,23 +202,33 @@ export default function AppsPage() {
   const [values, setValues] = useState<Record<string, string>>({});
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
+  const [requestingApp, setRequestingApp] = useState(false);
   const [notice, setNotice] = useState('');
+  const [requestForm, setRequestForm] = useState({
+    targetApp: 'GitHub',
+    title: '',
+    instructions: '',
+    requestType: 'coding',
+    priority: 'medium',
+  });
 
   const load = useCallback(async () => {
     setLoading(true);
     setNotice('');
     try {
-      const [stripeRes, beehiivRes, credentialsRes, distributionRes] = await Promise.all([
+      const [stripeRes, beehiivRes, credentialsRes, distributionRes, appRequestsRes] = await Promise.all([
         fetch('/api/stripe/summary', { cache: 'no-store' }).then(res => res.json()).catch(() => null),
         fetch('/api/newsletter/publication', { cache: 'no-store' }).then(res => res.json()).catch(() => null),
         fetch('/api/credentials', { cache: 'no-store' }).then(res => res.json()).catch(() => ({ credentials: [] })),
         fetch('/api/distribution', { cache: 'no-store' }).then(res => res.json()).catch(() => null),
+        fetch('/api/app-requests', { cache: 'no-store' }).then(res => res.json()).catch(() => null),
       ]);
       setSnapshot({
         stripe: stripeRes || undefined,
         beehiiv: beehiivRes || undefined,
         credentials: credentialsRes?.credentials || [],
         distribution: distributionRes || undefined,
+        appRequests: appRequestsRes || undefined,
       });
     } catch {
       setNotice('Unable to load connected app status right now.');
@@ -232,6 +283,9 @@ export default function AppsPage() {
   const connectedCore = apps.filter(app => app.status === 'connected' || app.status === 'saved').length;
   const distributionPlatforms = snapshot.distribution?.platforms || [];
   const connectedDistribution = snapshot.distribution?.connected || 0;
+  const allowedRequestApps = snapshot.appRequests?.policy.allowedApps || [];
+  const blockedRequestApps = snapshot.appRequests?.policy.blockedApps || [];
+  const recentAppRequests = snapshot.appRequests?.recentRequests || [];
 
   async function saveAppCredentials(app: AppCard) {
     const missing = app.fields.filter(field => field.required && !values[field.key]?.trim());
@@ -281,6 +335,39 @@ export default function AppsPage() {
     }
   }
 
+  async function queueHermesAppRequest(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const title = requestForm.title.trim();
+    if (!requestForm.targetApp.trim() || !title) {
+      setNotice('Choose an app and give Hermes a clear request title.');
+      return;
+    }
+
+    setRequestingApp(true);
+    setNotice('');
+    try {
+      const res = await fetch('/api/app-requests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...requestForm,
+          title,
+          actor: 'Adam',
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || data.blocked) {
+        setNotice(data.error || `${requestForm.targetApp} is protected and was not queued.`);
+      } else {
+        setNotice(`${requestForm.targetApp} request queued for Hermes and saved to the logs.`);
+        setRequestForm(prev => ({ ...prev, title: '', instructions: '' }));
+      }
+      await load();
+    } finally {
+      setRequestingApp(false);
+    }
+  }
+
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <TopBar title="Connected Apps" />
@@ -298,10 +385,11 @@ export default function AppsPage() {
           </button>
         </section>
 
-        <section style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, minmax(0, 1fr))', gap: 12, marginBottom: 18 }}>
+        <section style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(4, minmax(0, 1fr))', gap: 12, marginBottom: 18 }}>
           <MetricCard label="Core apps ready" value={`${connectedCore}/${apps.length}`} tone="#6366f1" />
           <MetricCard label="Publishing platforms" value={`${connectedDistribution}/${snapshot.distribution?.total || 6}`} tone="#10b981" />
           <MetricCard label="Saved credentials" value={String(snapshot.credentials.filter(item => item.status === 'provided').length)} tone="#f59e0b" />
+          <MetricCard label="Hermes app requests" value={String(snapshot.appRequests?.counts.queued || 0)} tone="#a78bfa" />
         </section>
 
         {notice && (
@@ -309,6 +397,123 @@ export default function AppsPage() {
             {notice}
           </div>
         )}
+
+        <section style={{ ...panelStyle, marginBottom: 16 }}>
+          <div style={panelHeader}>
+            <div>
+              <h2 style={sectionTitle}>Hermes App Requests</h2>
+              <p style={sectionSubtle}>Ask the AlbertOS coding agent to work in connected apps. Protected workspaces are blocked and logged.</p>
+            </div>
+            <Link href="/tasks" style={textLink}>View Tasks</Link>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'minmax(0, 1fr) minmax(300px, 0.85fr)', gap: 16 }}>
+            <form onSubmit={queueHermesAppRequest} style={{ display: 'grid', gap: 10 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'minmax(0, 0.85fr) minmax(0, 1.15fr)', gap: 10 }}>
+                <label style={labelStyle}>
+                  Target app
+                  <select
+                    value={requestForm.targetApp}
+                    onChange={(event) => setRequestForm(prev => ({ ...prev, targetApp: event.target.value }))}
+                    style={inputStyle}
+                  >
+                    {(allowedRequestApps.length ? allowedRequestApps : CORE_APP_DEFS.map(app => ({ id: app.id, name: app.name }))).map(app => (
+                      <option key={app.id} value={app.name}>{app.name}</option>
+                    ))}
+                  </select>
+                </label>
+                <label style={labelStyle}>
+                  Request title
+                  <input
+                    value={requestForm.title}
+                    onChange={(event) => setRequestForm(prev => ({ ...prev, title: event.target.value }))}
+                    placeholder="Example: Review the Vercel deployment logs"
+                    style={inputStyle}
+                  />
+                </label>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, minmax(0, 1fr))', gap: 10 }}>
+                <label style={labelStyle}>
+                  Request type
+                  <select
+                    value={requestForm.requestType}
+                    onChange={(event) => setRequestForm(prev => ({ ...prev, requestType: event.target.value }))}
+                    style={inputStyle}
+                  >
+                    <option value="coding">Coding</option>
+                    <option value="ops">Operations</option>
+                    <option value="content">Content</option>
+                    <option value="research">Research</option>
+                    <option value="support">Support</option>
+                  </select>
+                </label>
+                <label style={labelStyle}>
+                  Priority
+                  <select
+                    value={requestForm.priority}
+                    onChange={(event) => setRequestForm(prev => ({ ...prev, priority: event.target.value }))}
+                    style={inputStyle}
+                  >
+                    <option value="high">High</option>
+                    <option value="medium">Medium</option>
+                    <option value="low">Low</option>
+                  </select>
+                </label>
+              </div>
+
+              <label style={labelStyle}>
+                Instructions for Hermes
+                <textarea
+                  rows={4}
+                  value={requestForm.instructions}
+                  onChange={(event) => setRequestForm(prev => ({ ...prev, instructions: event.target.value }))}
+                  placeholder="Tell Hermes exactly what you want done, what to avoid, and what result you expect."
+                  style={{ ...inputStyle, resize: 'vertical' }}
+                />
+              </label>
+
+              <button type="submit" disabled={requestingApp} style={{ ...primaryButton, justifyContent: 'center' }}>
+                <Send size={15} />
+                {requestingApp ? 'Queuing...' : 'Queue App Request'}
+              </button>
+            </form>
+
+            <div style={{ display: 'grid', gap: 12, alignContent: 'start' }}>
+              <div style={policyBox}>
+                <div style={{ color: '#fff', fontSize: 13, fontWeight: 800, marginBottom: 8 }}>Protected workspaces</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                  {blockedRequestApps.map(app => (
+                    <span key={app.id} style={blockedPill}>
+                      <Ban size={13} />
+                      {app.name}
+                    </span>
+                  ))}
+                </div>
+                <p style={{ color: 'var(--text-muted)', fontSize: 12, lineHeight: 1.4, margin: '10px 0 0' }}>
+                  Hermes can request work everywhere else through this app, but these exclusions are enforced server-side.
+                </p>
+              </div>
+
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'center', marginBottom: 8 }}>
+                  <div style={{ color: '#fff', fontSize: 13, fontWeight: 800 }}>Recent requests</div>
+                  <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>{snapshot.appRequests?.counts.total || 0} total</span>
+                </div>
+                <div style={{ display: 'grid', gap: 8 }}>
+                  {recentAppRequests.slice(0, 4).map(request => (
+                    <RequestRow key={request.id} request={request} />
+                  ))}
+                  {!recentAppRequests.length && (
+                    <div style={{ color: 'var(--text-muted)', fontSize: 12, border: '1px solid var(--border)', borderRadius: 8, padding: 12 }}>
+                      No app requests yet. Queue one here or have Hermes post to /hermes/app-requests.
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
 
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'minmax(0, 1.15fr) minmax(320px, 0.85fr)', gap: 16, alignItems: 'start' }}>
           <section style={panelStyle}>
@@ -443,6 +648,31 @@ function AppTile({ app, active, onSelect }: { app: AppCard; active: boolean; onS
   );
 }
 
+function RequestRow({ request }: { request: AppRequest }) {
+  const tone = request.status === 'blocked'
+    ? '#fca5a5'
+    : request.status === 'done'
+      ? '#34d399'
+      : request.status === 'in_progress'
+        ? '#38bdf8'
+        : '#fbbf24';
+  return (
+    <div style={requestRow}>
+      <span style={{ minWidth: 0 }}>
+        <span style={{ display: 'block', color: '#fff', fontSize: 13, fontWeight: 750, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {request.title}
+        </span>
+        <span style={{ display: 'block', color: 'var(--text-muted)', fontSize: 11, marginTop: 3 }}>
+          {request.targetApp} / {request.createdBy}
+        </span>
+      </span>
+      <span style={{ color: tone, border: `1px solid ${tone}55`, borderRadius: 999, padding: '3px 7px', fontSize: 10, fontWeight: 800, whiteSpace: 'nowrap' }}>
+        {request.status.replace('_', ' ')}
+      </span>
+    </div>
+  );
+}
+
 function MetricCard({ label, value, tone }: { label: string; value: string; tone: string }) {
   return (
     <div style={{ ...panelStyle, padding: 16 }}>
@@ -515,6 +745,37 @@ const helperText: CSSProperties = {
   borderRadius: 8,
   padding: '9px 10px',
   background: 'rgba(255,255,255,0.03)',
+};
+
+const policyBox: CSSProperties = {
+  border: '1px solid rgba(248,113,113,0.28)',
+  borderRadius: 10,
+  padding: 12,
+  background: 'rgba(248,113,113,0.07)',
+};
+
+const blockedPill: CSSProperties = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: 6,
+  color: '#fecaca',
+  border: '1px solid rgba(248,113,113,0.35)',
+  borderRadius: 999,
+  padding: '5px 8px',
+  fontSize: 12,
+  fontWeight: 800,
+};
+
+const requestRow: CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  gap: 10,
+  border: '1px solid var(--border)',
+  borderRadius: 8,
+  padding: '10px 11px',
+  background: 'var(--surface-2)',
+  minWidth: 0,
 };
 
 const primaryButton: CSSProperties = {
